@@ -27,7 +27,7 @@ for x in `cat files_${begin}`; do
 done
 
 hadd Output.root *.root 
-#cmsRm  /store/group/phys_jetmet/pharris/production/01/ntuples/${name}/${filename}
-#cmsStage Output.root /store/group/phys_jetmet/pharris/production/01/ntuples/${name}/${filename}
-mv Output.root $basedir/$name/$filename
+cmsRm                /store/cmst3/user/pharris/production/03/ntuples/${name}/${filename}
+cmsStage Output.root /store/cmst3/user/pharris/production/03/ntuples/${name}/${filename}
+#mv Output.root $basedir/$name/$filename
 
