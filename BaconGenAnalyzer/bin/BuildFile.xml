@@ -1,0 +1,8 @@
+<use name="BaconAna/DataFormats"/>
+<use name="BaconAnalyzer/BaconGenAnalyzer"/>
+<use name="root"/>
+<flags CXXFLAGS="-g -Wall"/>
+<bin   file="runVBF.cpp" name="runVBF"> </bin>
+<bin   file="runMJ.cpp" name="runMJ"> </bin>
+
+
