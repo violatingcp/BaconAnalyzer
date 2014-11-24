@@ -5,7 +5,7 @@
 
 using namespace baconhep;
 
-JetLoader::JetLoader(TTree *iTree,std::string iHLTFile) { 
+JetLoader::JetLoader(TTree *iTree,bool iData,std::string iHLTFile) { 
   fJets     = new TClonesArray("baconhep::TJet");
   fAddJets  = new TClonesArray("baconhep::TAddJet");
   iTree->SetBranchAddress("Jet05",       &fJets);
@@ -42,6 +42,15 @@ JetLoader::JetLoader(TTree *iTree,std::string iHLTFile) {
   fJC2 = 0; fReader->AddVariable("jet1c2_2P0" ,&fJC2);
   fJQ  = 0; fReader->AddVariable("jet1qjet"   ,&fJQ );
   fReader->BookMVA(lJetName .c_str(),lWeightFile.c_str());
+
+  std::vector<JetCorrectorParameters> corrParams;
+  corrParams.push_back(JetCorrectorParameters("/afs/cern.ch/work/p/pharris/public/JEC/FT53_V21A_AN6_L1FastJet_AK7PFchs.txt"));
+  corrParams.push_back(JetCorrectorParameters("/afs/cern.ch/work/p/pharris/public/JEC/FT53_V21A_AN6_L2Relative_AK7PFchs.txt"));
+  corrParams.push_back(JetCorrectorParameters("/afs/cern.ch/work/p/pharris/public/JEC/FT53_V21A_AN6_L3Absolute_AK7PFchs.txt"));
+  if(iData) corrParams.push_back(JetCorrectorParameters("/afs/cern.ch/work/p/pharris/public/JEC/FT53_V21A_AN6_L2L3Residual_AK7PFchs.txt"));
+  //JetCorrectorParameters param("/afs/cern.ch/work/p/pharris/public/JEC/FT53_V21A_AN6_L3Absolute_AK7PFunc.txt");
+  fJetCorr = new FactorizedJetCorrector(corrParams);
+  //fJetUnc = new JetCorrectionUncertainty(param);
 }
 JetLoader::~JetLoader() { 
   delete fJets;
@@ -57,8 +66,10 @@ JetLoader::~JetLoader() {
   delete fPtr2; 
   delete fPtr3;
   delete fPtr4;
-  delete fFPtr1;
-  delete fFPtr2; 
+  delete fFPtr1sj1;
+  delete fFPtr2sj1; 
+  delete fFPtr1sj2;
+  delete fFPtr2sj2; 
   delete fDiJet;
 }
 void JetLoader::reset(TJet &iJet,TAddJet &iAddJet) { 
@@ -86,6 +97,7 @@ void JetLoader::reset(TJet &iJet,TAddJet &iAddJet) {
   iJet.dR2Mean    = 0; 
   iJet.ptD        = 0; 
   iJet.q          = 0; 
+  iJet.pullAngle  = 0; 
   iJet.pullY      = 0; 
   iJet.pullPhi    = 0; 
   iJet.chEmFrac   = 0; 
@@ -106,6 +118,10 @@ void JetLoader::reset(TJet &iJet,TAddJet &iAddJet) {
   iAddJet.phi_t1    = 0; 
   iAddJet.eta_t1    = 0; 
   iAddJet.mass_t1   = 0; 
+  iAddJet.qjet      = 0; 
+  iAddJet.c2_0      = 0; 
+  iAddJet.c2_1P0    = 0; 
+  iAddJet.c2_2P0    = 0; 
 }
 void JetLoader::reset() { 
   fNJets      = 0;
@@ -125,6 +141,12 @@ void JetLoader::reset() {
   fDiJet->SetPtEtaPhiM(1e-9,0,0,0);
   fFPtr1->SetPtEtaPhiM(1e-9,0,0,0);
   fFPtr2->SetPtEtaPhiM(1e-9,0,0,0);
+
+  fFPtr1sj1->SetPtEtaPhiM(1e-9,0,0,0);
+  fFPtr2sj1->SetPtEtaPhiM(1e-9,0,0,0);
+  fFPtr1sj2->SetPtEtaPhiM(1e-9,0,0,0);
+  fFPtr2sj2->SetPtEtaPhiM(1e-9,0,0,0);
+
   reset(fJet1,fAJet1); 
   reset(fJet2,fAJet2);
   reset(fJet3,fAJet3);
@@ -153,6 +175,11 @@ void JetLoader::setupTree(TTree *iTree) {
 
   fTree->Branch("fjet1"         , "TLorentzVector", &fFPtr1);
   fTree->Branch("fjet2"         , "TLorentzVector", &fFPtr2);
+  //Subjet
+  fTree->Branch("fjet1sj1"      , "TLorentzVector", &fFPtr1sj1);
+  fTree->Branch("fjet2sj1"      , "TLorentzVector", &fFPtr2sj1);
+  fTree->Branch("fjet1sj2"      , "TLorentzVector", &fFPtr1sj2);
+  fTree->Branch("fjet2sj2"      , "TLorentzVector", &fFPtr2sj2);
   fTree->Branch("dijet"         , "TLorentzVector", &fDiJet);
   //Jet Properites
   fTree->Branch("jet1CHF"      , &fJet1.chHadFrac    , "fJet1CHF/F");
@@ -166,15 +193,16 @@ void JetLoader::setupTree(TTree *iTree) {
   fTree->Branch("jet1q"        , &fJet1.q            , "fJet1q/F");
   fTree->Branch("jet1PartonId" , &fJet1.mcFlavorPhys, "fJet1PartonId/I");
 
-  fTree->Branch("fjet1CHF"     , &fFJet1.chHadFrac     , "fFJet1CHF/F");
-  fTree->Branch("fjet1NHF"     , &fFJet1.neuHadFrac    , "fFJet1NHF/F");
-  fTree->Branch("fjet1NEMF"    , &fFJet1.neuEmFrac     , "fFJet1NEMF/F");
-  fTree->Branch("fjet1Unc"     , &fFJet1.unc           , "fFJet1Unc/F");
-  fTree->Branch("fjet1Btag"    , &fFJet1.csv           , "fFJet1Btag/F");
-  fTree->Branch("fjet1QGtag"   , &fFJet1.qgid          , "fFJet1QGtag/F");
-  fTree->Branch("fjet1PullY"   , &fFJet1.pullY         , "fFJet1Pull/F");
-  fTree->Branch("fjet1PullPhi" , &fFJet1.pullPhi       , "fFJet1PullPhi/F");
-  fTree->Branch("fjet1PartonId", &fFJet1.mcFlavorPhys  , "fFJet1PartonId/I");
+  fTree->Branch("fjet1CHF"      , &fFJet1.chHadFrac     , "fFJet1CHF/F");
+  fTree->Branch("fjet1NHF"      , &fFJet1.neuHadFrac    , "fFJet1NHF/F");
+  fTree->Branch("fjet1NEMF"     , &fFJet1.neuEmFrac     , "fFJet1NEMF/F");
+  fTree->Branch("fjet1Unc"      , &fFJet1.unc           , "fFJet1Unc/F");
+  fTree->Branch("fjet1Btag"     , &fFJet1.csv           , "fFJet1Btag/F");
+  fTree->Branch("fjet1QGtag"    , &fFJet1.qgid          , "fFJet1QGtag/F");
+  fTree->Branch("fjet1PullY"    , &fFJet1.pullY         , "fFJet1Pull/F");
+  fTree->Branch("fjet1PullPhi"  , &fFJet1.pullPhi       , "fFJet1PullPhi/F");
+  fTree->Branch("fjet1PullAngle", &fFJet1.pullAngle     , "fFJet1PullAngle/F");
+  fTree->Branch("fjet1PartonId" , &fFJet1.mcFlavorPhys  , "fFJet1PartonId/I");
   fTree->Branch("fjet1tau1"     , &fFJet1.tau1         , "fFJet1Tau1/F");
   fTree->Branch("fjet1tau2"     , &fFJet1.tau2         , "fFJet1Tau2/F");
   fTree->Branch("fjet1tau3"     , &fFJet1.tau3         , "fFJet1Tau3/F");
@@ -187,6 +215,10 @@ void JetLoader::setupTree(TTree *iTree) {
   fTree->Branch("fjet1csv1"     , &fFJet1.qg1          , "fFJet1qg1/F");
   fTree->Branch("fjet1csv2"     , &fFJet1.qg2          , "fFJet1qg2/F");
   fTree->Branch("fjet1q"        , &fFJet1.q            , "fFJet1q/F");
+  fTree->Branch("fjet1qjet"     , &fFAJet1.qjet        , "fFJet1qjet/F");
+  fTree->Branch("fjet1c2b0"     , &fFAJet1.c2_0        , "fFJet1c2_0/F");
+  fTree->Branch("fjet1c2b1"     , &fFAJet1.c2_1P0      , "fFJet1c2_1P0/F");
+  fTree->Branch("fjet1c2b2"     , &fFAJet1.c2_2P0      , "fFJet1c2_2P0/F");
   fTree->Branch("fjet1Wmva"     , &fFJet1.mva          , "fFJet1mva/F");
 
   fTree->Branch("jet2CHF"     , &fJet2.chHadFrac    , "fJet2CHF/F");
@@ -198,13 +230,16 @@ void JetLoader::setupTree(TTree *iTree) {
   fTree->Branch("jet2q"       , &fJet2.q            , "fFJet2q/F");
   fTree->Branch("jet2PartonId", &fJet2.mcFlavorPhys , "fJet2PartonId/I");
 
-  fTree->Branch("fjet2CHF"     , &fFJet2.chHadFrac    , "fJet2CHF/F");
-  fTree->Branch("fjet2NHF"     , &fFJet2.neuHadFrac   , "fJet2NHF/F");
-  fTree->Branch("fjet2NEMF"    , &fFJet2.neuEmFrac    , "fJet2NEMF/F");
-  fTree->Branch("fjet2Unc"     , &fFJet2.unc          , "fJet2Unc/F");
-  fTree->Branch("fjet2Btag"    , &fFJet2.csv          , "fJet2Btag/F");
-  fTree->Branch("fjet2QGtag"   , &fFJet2.qgid         , "fJet2QGtag/F");
-  fTree->Branch("fjet2PartonId", &fFJet2.mcFlavorPhys , "fJet2PartonId/I");
+  fTree->Branch("fjet2CHF"      , &fFJet2.chHadFrac    , "fJet2CHF/F");
+  fTree->Branch("fjet2NHF"      , &fFJet2.neuHadFrac   , "fJet2NHF/F");
+  fTree->Branch("fjet2NEMF"     , &fFJet2.neuEmFrac    , "fJet2NEMF/F");
+  fTree->Branch("fjet2Unc"      , &fFJet2.unc          , "fJet2Unc/F");
+  fTree->Branch("fjet2Btag"     , &fFJet2.csv          , "fJet2Btag/F");
+  fTree->Branch("fjet2QGtag"    , &fFJet2.qgid         , "fJet2QGtag/F");
+  fTree->Branch("fjet2pullY"    , &fFJet2.pullY        , "fFJet2PullEta/F");
+  fTree->Branch("fjet2pullPhi"  , &fFJet2.pullPhi      , "fFJet2PullPhi/F");
+  fTree->Branch("fjet2PullAngle", &fFJet2.pullAngle    , "fFJet2PullAngle/F");
+  fTree->Branch("fjet2PartonId" , &fFJet2.mcFlavorPhys , "fJet2PartonId/I");
 
   fTree->Branch("fjet2tau1"    , &fFJet2.tau1         , "fFJet2Tau1/F");
   fTree->Branch("fjet2tau2"    , &fFJet2.tau2         , "fFJet2Tau2/F");
@@ -218,10 +253,12 @@ void JetLoader::setupTree(TTree *iTree) {
   fTree->Branch("fjet2csv1"    , &fFJet2.qg1          , "fFJet2qg1/F");
   fTree->Branch("fjet2csv2"    , &fFJet2.qg2          , "fFJet2qg2/F");
   fTree->Branch("fjet2q"       , &fFJet2.q            , "fFJet2q/F");
-  fTree->Branch("fjet2pullY"   , &fFJet2.pullY        , "fFJet2PullEta/F");
-  fTree->Branch("fjet2pullPhi" , &fFJet2.pullPhi      , "fFJet2PullPhi/F");
+  fTree->Branch("fjet2qjet"    , &fFAJet2.qjet        , "fFJet2qjet/F");
+  fTree->Branch("fjet2c2b0"    , &fFAJet2.c2_0        , "fFJet1c2_0/F");
+  fTree->Branch("fjet2c2b1"    , &fFAJet2.c2_1P0      , "fFJet1c2_1P0/F");
+  fTree->Branch("fjet2c2b2"    , &fFAJet2.c2_2P0      , "fFJet1c2_2P0/F");
   fTree->Branch("fjet2Wmva"    , &fFJet2.mva          , "fFJet2mva/F");
-
+  
   fTree->Branch("jet3CHF"     , &fJet3.chHadFrac    , "fJet3CHF/F");
   fTree->Branch("jet3NHF"     , &fJet3.neuHadFrac   , "fJet3NHF/F");
   fTree->Branch("jet3NEMF"    , &fJet3.neuEmFrac    , "fJet3NEMF/F");
@@ -279,13 +316,24 @@ void JetLoader::load(int iEvent) {
   fFatJetBr    ->GetEntry(iEvent);
   fFatAddJetBr ->GetEntry(iEvent);
 }
-bool JetLoader::selectJets(std::vector<TLorentzVector> &iVetoes) {
+double JetLoader::correction(TJet &iJet,double iRho) { 
+  TLorentzVector lVec; lVec.SetPtEtaPhiM(iJet.ptRaw,iJet.eta,iJet.phi,iJet.mass);
+  fJetCorr->setJetEta(iJet.eta);
+  fJetCorr->setJetPt (iJet.ptRaw);
+  fJetCorr->setJetPhi(iJet.phi);
+  fJetCorr->setJetE  (lVec.E());
+  fJetCorr->setRho   (iRho);
+  fJetCorr->setJetA  (iJet.area);
+  fJetCorr->setJetEMF(-99.0);     
+  return ((fJetCorr->getCorrection())*iJet.ptRaw);
+}
+bool JetLoader::selectJets(std::vector<TLorentzVector> &iVetoes,double iRho) {
   reset(); 
   std::vector<TJet*> lJets;
   for  (int i0 = 0; i0 < fJets->GetEntriesFast(); i0++) { 
     TJet *pJet = (TJet*)((*fJets)[i0]);
     if(pJet->pt < 30 )  continue;
-    if(!passPUId(pJet)) continue;
+    if(!passPUId(pJet) && pJet->pt < 50 ) continue;
     //Veto
     bool pMatch = false;
     for(unsigned int i1 = 0; i1 < iVetoes.size(); i1++) {
@@ -314,17 +362,18 @@ bool JetLoader::selectJets(std::vector<TLorentzVector> &iVetoes) {
     //Limit this to the top 4 Jets
     //if(lJets.size() > 4) lJets.pop_back();
   }
-  if(lJets.size() > 0)   fillVars(lJets[0],fPtr1,fJet1,fAJet1);
-  if(lJets.size() > 1)   fillVars(lJets[1],fPtr2,fJet2,fAJet2);
-  if(lJets.size() > 2)   fillVars(lJets[2],fPtr3,fJet3,fAJet3);
-  if(lJets.size() > 3)   fillVars(lJets[3],fPtr4,fJet4,fAJet4);
-  
+  //-1 means no corr
+  if(lJets.size() > 0)   fillVars(lJets[0],-1,fPtr1,fJet1,fAJet1,0,0);
+  if(lJets.size() > 1)   fillVars(lJets[1],-1,fPtr2,fJet2,fAJet2,0,0);
+  if(lJets.size() > 2)   fillVars(lJets[2],-1,fPtr3,fJet3,fAJet3,0,0);
+  if(lJets.size() > 3)   fillVars(lJets[3],-1,fPtr4,fJet4,fAJet4,0,0);
+
   TJet *lFJet1 = 0; 
   TJet *lFJet2 = 0; 
   if(lJets.size() > 0)   lFJet1  = fatJet(lJets[0]);
   if(lJets.size() > 1)   lFJet2  = fatJet(lJets[1]);
-  if(lFJet1 != 0     )   fillVars(lFJet1,fFPtr1,fFJet1,fFAJet1);
-  if(lFJet2 != 0     )   fillVars(lFJet2,fFPtr2,fFJet2,fFAJet2);
+  if(lFJet1 != 0     )   fillVars(lFJet1,iRho,fFPtr1,fFJet1,fFAJet1,fFPtr1sj1,fFPtr1sj2);
+  if(lFJet2 != 0     )   fillVars(lFJet2,iRho,fFPtr2,fFJet2,fFAJet2,fFPtr2sj1,fFPtr2sj2);
 
   if(lJets.size() > 1)   {
     TLorentzVector lDiJet = *fPtr1 + *fPtr2;
@@ -350,12 +399,15 @@ bool JetLoader::selectJets(std::vector<TLorentzVector> &iVetoes) {
   if(lJets.size() > 1) fHLTMatch   = ((passTrigObj(&fJet1,1) && passTrigObj(&fJet2,1))) << 1;// ||  (passTrigObj(&fJet1,2) && passTrigObj(&fJet2,1)))  << 1;
   return true;
 }
-void JetLoader::fillVars(TJet *iJet,TLorentzVector *iPtr,TJet &iSaveJet,TAddJet &iASaveJet) { 
-  iSaveJet.pt   = iJet->pt;
+void JetLoader::fillVars(TJet *iJet,double iRho,TLorentzVector *iPtr,TJet &iSaveJet,TAddJet &iASaveJet,TLorentzVector *iPtrsj1,TLorentzVector *iPtrsj2) { 
+  double lPt =  iJet->pt;
+  if(iRho  < 0) lPt = correction(*iJet,iRho);
+  iSaveJet.pt   = lPt;
   iSaveJet.eta  = iJet->eta;
   iSaveJet.phi  = iJet->phi;
   iSaveJet.mass = iJet->mass;
-  if(iJet->pt > 0) iPtr->SetPtEtaPhiM(iJet->pt,iJet->eta,iJet->phi,iJet->mass);
+  if(iJet->pt > 0) iPtr->SetPtEtaPhiM(lPt,iJet->eta,iJet->phi,iJet->mass);
+  //if(iJet->pt > 0) iGPtr->SetPtEtaPhiM(iJet->pt,iJet->eta,iJet->phi,iJet->mass);
   iSaveJet.chHadFrac    = iJet->chHadFrac;
   iSaveJet.chEmFrac     = iJet->chEmFrac;
   iSaveJet.neuHadFrac   = iJet->neuHadFrac;
@@ -381,16 +433,23 @@ void JetLoader::fillVars(TJet *iJet,TLorentzVector *iPtr,TJet &iSaveJet,TAddJet 
   iSaveJet.csv2         = iJet->csv2;
   iSaveJet.qg1          = iJet->qg1;
   iSaveJet.qg2          = iJet->qg2;
+  iSaveJet.pullAngle    = iJet->pullAngle;
   iSaveJet.hltMatchBits = iJet->hltMatchBits;
-  iASaveJet.pt_p1     = lAJet->pt_p1    ;
-  iASaveJet.phi_p1    = lAJet->phi_p1   ;
-  iASaveJet.eta_p1    = lAJet->eta_p1   ;
-  iASaveJet.mass_p1   = lAJet->mass_p1  ;
-  iASaveJet.pt_t1     = lAJet->pt_t1    ;
-  iASaveJet.phi_t1    = lAJet->phi_t1   ;
-  iASaveJet.eta_t1    = lAJet->eta_t1   ;
-  iASaveJet.mass_t1   = lAJet->mass_t1  ;
-  iSaveJet .mva        = mva(iJet,lAJet);
+  iASaveJet.pt_p1       = lAJet->pt_p1    ;
+  iASaveJet.phi_p1      = lAJet->phi_p1   ;
+  iASaveJet.eta_p1      = lAJet->eta_p1   ;
+  iASaveJet.mass_p1     = lAJet->mass_p1  ;
+  iASaveJet.pt_t1       = lAJet->pt_t1    ;
+  iASaveJet.phi_t1      = lAJet->phi_t1   ;
+  iASaveJet.eta_t1      = lAJet->eta_t1   ;
+  iASaveJet.mass_t1     = lAJet->mass_t1  ;
+  iASaveJet.qjet        = lAJet->qjet     ;
+  iASaveJet.c2_0        = lAJet->c2_0     ;
+  iASaveJet.c2_1P0      = lAJet->c2_1P0   ;
+  iASaveJet.c2_2P0      = lAJet->c2_2P0   ;
+  iSaveJet .mva         = mva(iJet,lAJet);
+  if(lAJet->sj1_pt > 0 && iPtrsj1 != 0) iPtrsj1->SetPtEtaPhiM(lAJet->sj1_pt,lAJet->sj1_eta,lAJet->sj1_phi,lAJet->sj1_m);
+  if(lAJet->sj2_pt > 0 && iPtrsj2 != 0) iPtrsj2->SetPtEtaPhiM(lAJet->sj2_pt,lAJet->sj2_eta,lAJet->sj2_phi,lAJet->sj2_m);
 }
 bool JetLoader::vetoJet() {
   for  (int i0 = 0; i0 < fJets->GetEntriesFast(); i0++) { 
@@ -464,6 +523,7 @@ TJet *JetLoader::fatJet(TJet *iJet) {
     double pDPhi = pJet->phi-iJet->phi; 
     if(fabs(pDPhi) > TMath::Pi()*2.-fabs(pDPhi)) pDPhi = 2.*TMath::Pi()-fabs(pDPhi);
     if(sqrt(pDEta*pDEta+pDPhi*pDPhi) < 0.4) lJet = pJet;
+    std::cout << "==> " << sqrt(pDEta*pDEta+pDPhi*pDPhi) << std::endl;
   }
   return lJet;
 }

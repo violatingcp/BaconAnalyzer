@@ -41,5 +41,5 @@ for x in `seq 0 $unit $tot`; do
     #    root -b -q rescale.C\(\"root://eoscms.cern.ch/$eosdir/$x\"\)
     #mv Output.root $name/Hist$x
     #./runBatch.sh root://eoscms.cern.ch/$eosdir $gen $json $dimu $xs $name $x $PWD 
-    bsub -q 1nh  -o out.%J  runBatch.sh root://eoscms.cern.ch/$eosdir $gen $json $dimu $xs $name $x $PWD
+    bsub -q 8nh  -o out.%J  runBatch.sh root://eoscms.cern.ch/$eosdir $gen $json $dimu $xs $name $x $PWD
 done

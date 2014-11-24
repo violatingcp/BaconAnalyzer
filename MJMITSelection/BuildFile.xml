@@ -1,4 +1,5 @@
 <use name="BaconAna/DataFormats"/>
+<use name="CondFormats/JetMETObjects"/>
 <use name="root"/>
 <use name="roottmva"/>
 <flags CXXFLAGS="-g -Wall"/>

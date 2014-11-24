@@ -4,6 +4,9 @@
 #include "TClonesArray.h"
 #include "TMVA/Tools.h"
 #include "TMVA/Reader.h"
+#include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
+#include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
+#include "CondFormats/JetMETObjects/interface/JetCorrectionUncertainty.h"
 #include "BaconAna/DataFormats/interface/TJet.hh"
 #include "BaconAna/DataFormats/interface/TAddJet.hh"
 #include "BaconAna/DataFormats/interface/TTrigger.hh"
@@ -12,7 +15,7 @@ using namespace baconhep;
 
 class JetLoader { 
 public:
-  JetLoader(TTree *iTree,std::string iHLTFile="/afs/cern.ch/user/p/pharris/pharris/public/bacon/CMSSW_5_3_13/src/BaconAna/DataFormats/data/HLTFile_v0");
+  JetLoader(TTree *iTree,bool iData=false,std::string iHLTFile="/afs/cern.ch/user/p/pharris/pharris/public/bacon/CMSSW_5_3_13/src/BaconAna/DataFormats/data/HLTFile_v0");
   ~JetLoader();
   void reset();
   void reset(TJet &iJet,TAddJet &iAddJet);
@@ -20,8 +23,8 @@ public:
   void setupTree(TTree *iTree);
   void load (int iEvent);
   
-  bool selectJets(std::vector<TLorentzVector> &iVetoes);
-  void fillVars(TJet *iJet,TLorentzVector *iPtr,TJet &iSaveJet,TAddJet &iASaveJet);
+  bool selectJets(std::vector<TLorentzVector> &iVetoes,double iRho);
+  void fillVars(TJet *iJet,double iRho,TLorentzVector *iPtr,TJet &iSaveJet,TAddJet &iASaveJet,TLorentzVector *iPtrsj1,TLorentzVector *iPtrsj2);
   //Selectors
   bool vetoJet();
   bool passLoose      (TJet *iJet);
@@ -34,7 +37,7 @@ public:
   //Trigger Stuff
   void addTrigger (std::string iName);
   bool passTrigObj(TJet *iJet,int iId);
-
+  double correction(TJet &iJet,double iRho);
 protected: 
   TClonesArray *fJets;
   TBranch      *fJetBr;
@@ -67,6 +70,10 @@ protected:
 
   TLorentzVector *fFPtr1;
   TLorentzVector *fFPtr2;
+  TLorentzVector *fFPtr1sj1;
+  TLorentzVector *fFPtr2sj1;
+  TLorentzVector *fFPtr1sj2;
+  TLorentzVector *fFPtr2sj2;
 
   TJet fJet1;
   TJet fJet2;
@@ -94,4 +101,7 @@ protected:
   float fJM2;
   float fJC2;
   float fJQ ;
+
+  FactorizedJetCorrector   *fJetCorr;
+  JetCorrectionUncertainty *fJetUnc;
 };

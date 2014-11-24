@@ -128,7 +128,7 @@ int main( int argc, char **argv ) {
     fPhoton  ->selectPhotons(lVetoes,fEvt->fRho);
     
     fJet->load(i0); 
-    fJet->selectJets(lVetoes);
+    fJet->selectJets(lVetoes,fEvt->fRho);
 
     if(lGen == 1) fGen->load(i0);
     if(lGen == 1) fGen->selectBoson();
