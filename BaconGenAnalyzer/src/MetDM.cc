@@ -98,3 +98,39 @@ void MetDM::fillMet(GenJet &iGen,Jets &iJets,bool iFake) { //Assume Fake is part
   fMetCov11 = (*(fCorrector->fCov))(1,1);
   //fMetCov00 = 400.; fMetCov11 = 400.; fMetCov10 = 20.; fMetCov01 = 20.;
 }
+
+void MetDM::fillMet(GenV &iGen,Jets &iJets,bool iFake) { //Assume Fake is part of the recoil
+  TLorentzVector lRecoil; lRecoil.SetPtEtaPhiM(iGen.fV1Pt,0,iGen.fV1Phi,0); lRecoil.RotateZ(TMath::Pi());
+  subtractGenJets(lRecoil,iJets);
+  TLorentzVector lMet;   lMet  .SetPtEtaPhiM(0   ,0,    0,0);
+  lMet -= lRecoil;
+  
+  double pU1,pU2  = 0;
+  double lVMet    = lMet.Pt(); 
+  double lVMetPhi = lMet.Phi();
+  int    lNJets   = 0;//=> Just assume we correct unclustered energy
+  if(lRecoil.Pt() > 50) lNJets = 1.;
+  lRecoil.RotateZ(TMath::Pi()); //=> Convert it to modified boson pT 
+  
+  //Smear the MET from code in my thesis using official CMS Resolutions
+  //fCorrector->CorrectAll(lVMet, lVMetPhi, fVPt, fVPhi, (lLep1+lLep2).Pt(), (lLep1+lLep2).Phi(), pU1, pU2, 0, 0, lNJets);
+  fCorrector->CorrectAll(lVMet, lVMetPhi, lRecoil.Pt(), lRecoil.Phi(), 0., 0., pU1, pU2, 0, 0, lNJets);
+  lMet.SetPtEtaPhiM(lVMet,0,lVMetPhi,0);
+  subtractJets(lMet,iJets);
+  
+  TLorentzVector lJet1; if(iJets.fJetPt1 > 0) lJet1.SetPtEtaPhiM(iJets.fJetPt1,iJets.fJetEta1,iJets.fJetPhi1,iJets.fJetM1);
+  TLorentzVector lJet2; if(iJets.fJetPt2 > 0) lJet2.SetPtEtaPhiM(iJets.fJetPt2,iJets.fJetEta2,iJets.fJetPhi2,iJets.fJetM2);
+  fMet    = lMet.Pt();
+  fMetPhi = lMet.Phi();
+  fMt1    = sqrt(2.0*(lJet1.Pt()*lMet.Pt()*(1.0-cos(Tools::deltaPhi(lJet1.Phi(),lMet.Phi())))));
+  fMt2    = sqrt(2.0*(lJet2.Pt()*lMet.Pt()*(1.0-cos(Tools::deltaPhi(lJet2.Phi(),lMet.Phi())))));
+  //fPtH    = (lMet + lLep1 + lLep2).Pt();
+  //Get MET Covariance matrix in a lazy manner => b/c I have it saved here
+  lNJets = 1;
+  fCorrector->CorrectAll(lVMet, lVMetPhi, iGen.fBPt, iGen.fBPhi,0.,0., pU1, pU2, 0, 0, lNJets);
+  fMetCov00 = (*(fCorrector->fCov))(0,0);
+  fMetCov10 = (*(fCorrector->fCov))(1,0);
+  fMetCov01 = (*(fCorrector->fCov))(0,1);
+  fMetCov11 = (*(fCorrector->fCov))(1,1);
+  //fMetCov00 = 400.; fMetCov11 = 400.; fMetCov10 = 20.; fMetCov01 = 20.;
+}

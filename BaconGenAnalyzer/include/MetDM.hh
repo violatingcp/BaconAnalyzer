@@ -1,5 +1,6 @@
 #include "TLorentzVector.h"
 #include "RecoilCorrector.hh"
+#include "GenV.hh"
 #include "GenJet.hh"
 #include "Jets.hh"
 
@@ -12,6 +13,7 @@ public:
   void subtractGenJets(TLorentzVector &iRecoil,Jets &iJets,bool iSubtract=true);  
   void subtractJets   (TLorentzVector &iRecoil,Jets &iJets,bool iSubtract=true);
   void fillMet(GenJet &iGen, Jets &iJets,bool iFake=false);
+  void fillMet(GenV   &iGen, Jets &iJets,bool iFake=false);
   
 private:
   float fMet;

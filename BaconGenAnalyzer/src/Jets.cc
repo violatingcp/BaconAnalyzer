@@ -24,6 +24,12 @@ void Jets::setupJetTree(TTree *iTree) {
   iTree->Branch("jcm"     ,&fJCM,      "fJCM/F");
   iTree->Branch("jcid"    ,&fJCId,     "fJCId/I");
 
+  iTree->Branch("fjpt"    ,&fFJPt,     "fFJPt/F");
+  iTree->Branch("fjeta"   ,&fFJEta,    "fFJEta/F");
+  iTree->Branch("fjphi"   ,&fFJPhi,    "fFJPhi/F");
+  iTree->Branch("fjm"     ,&fFJM,      "fFJM/F");
+  iTree->Branch("fjmtrim" ,&fFJMTrim,  "fFJMTrim/F");
+  iTree->Branch("fjt2t1"  ,&fFJT2T1,   "fFJT2T1/F");
 
   iTree->Branch("jgpt_1"    ,&fGJetPt1,  "fJetPt1/F");
   iTree->Branch("jgeta_1"   ,&fGJetEta1, "fJetEta1/F");
@@ -35,12 +41,21 @@ void Jets::setupJetTree(TTree *iTree) {
   iTree->Branch("jgphi_2"   ,&fGJetPhi2, "fJetPhi2/F");
   iTree->Branch("jgm_2"     ,&fGJetM2,   "fJetM2/F");
 
-  iTree->Branch("jgcpt"    ,&fGJCPt,     "fJCPt/F");
-  iTree->Branch("jgceta"   ,&fGJCEta,    "fJCEta/F");
-  iTree->Branch("jgcphi"   ,&fGJCPhi,    "fJCPhi/F");
-  iTree->Branch("jgcm"     ,&fGJCM,      "fJCM/F");
+  iTree->Branch("jgcpt"    ,&fGJCPt,     "fGJCPt/F");
+  iTree->Branch("jgceta"   ,&fGJCEta,    "fGJCEta/F");
+  iTree->Branch("jgcphi"   ,&fGJCPhi,    "fGJCPhi/F");
+  iTree->Branch("jgcm"     ,&fGJCM,      "fGJCM/F");
+
+  iTree->Branch("fjgpt"    ,&fGFJPt,     "fGFJPt/F");
+  iTree->Branch("fjgeta"   ,&fGFJEta,    "fGFJEta/F");
+  iTree->Branch("fjgphi"   ,&fGFJPhi,    "fGFJPhi/F");
+  iTree->Branch("fjgm"     ,&fGFJM,      "fGFJM/F");
+  iTree->Branch("fjgmtrim" ,&fGFJMTrim,  "fGFJMTrim/F");
 
   iTree->Branch("mjj"     ,&fMJJ,      "fMJJ/F");
+  iTree->Branch("ptjj"    ,&fPtJJ,     "fPtJJ/F");
+  iTree->Branch("phijj"   ,&fPhiJJ,    "fPhiJJ/F");
+  iTree->Branch("etajj"   ,&fEtaJJ,    "fEtaJJ/F");
   iTree->Branch("jdeta"   ,&fJDEta,    "fJDEta/F");
   iTree->Branch("jdphi"   ,&fJDPhi,    "fJDPhi/F");
   iTree->Branch("njets"   ,&fNJets,    "fNJets/F");
@@ -119,6 +134,14 @@ void Jets::clearJets(){
   fJCPhi=0;
   fJCM=0;
   fJCId=0;
+  
+  fFJPt=0;
+  fFJEta=0;
+  fFJPhi=0;
+  fFJM=0;
+  fFJMTrim=0;
+  fFJT2T1=0;
+  fFJId=0;
 
   fGJetPt1=0;
   fGJetEta1=0;
@@ -132,8 +155,17 @@ void Jets::clearJets(){
   fGJCEta=0;
   fGJCPhi=0;
   fGJCM=0;
+
+  fGFJPt=0;
+  fGFJEta=0;
+  fGFJPhi=0;
+  fGFJM=0;
+  fGFJMTrim=0;
    
   fMJJ=0;
+  fPtJJ=0;
+  fPhiJJ=0;
+  fEtaJJ=0;
   fJDEta=0;
   fJDPhi=0;
   fNJets=0;
@@ -145,15 +177,15 @@ void Jets::buildLeptonVec(Gen &iGen) {
     fLeptons.push_back(lVec);
   }
   if(iGen.fPt2 > 0) {
-    TLorentzVector lVec; lVec.SetPtEtaPhiM(iGen.fPt1,iGen.fEta1,iGen.fPhi1,iGen.fM1);
+    TLorentzVector lVec; lVec.SetPtEtaPhiM(iGen.fPt2,iGen.fEta2,iGen.fPhi2,iGen.fM2);
     fLeptons.push_back(lVec);
   }
   if(iGen.fPt3 > 0) {
-    TLorentzVector lVec; lVec.SetPtEtaPhiM(iGen.fPt1,iGen.fEta1,iGen.fPhi1,iGen.fM1);
+    TLorentzVector lVec; lVec.SetPtEtaPhiM(iGen.fPt3,iGen.fEta3,iGen.fPhi3,iGen.fM3);
     fLeptons.push_back(lVec);
   }
   if(iGen.fPt4 > 0) {
-    TLorentzVector lVec; lVec.SetPtEtaPhiM(iGen.fPt1,iGen.fEta1,iGen.fPhi1,iGen.fM1);
+    TLorentzVector lVec; lVec.SetPtEtaPhiM(iGen.fPt4,iGen.fEta4,iGen.fPhi4,iGen.fM4);
     fLeptons.push_back(lVec);
   }
 }
@@ -228,7 +260,23 @@ void Jets::selectJets(GenJet &iGen) {
   if(lJets.size() >  2) fJCEta   = lJets[2]->eta;;
   if(lJets.size() >  2) fJCPhi   = lJets[2]->phi;
   if(lJets.size() >  2) fJCM     = lJets[2]->mass;
-
+  std::vector<baconhep::TGenJet*> lVJets;
+  for(int i0 = 0; i0 < iGen.fGenFatJets->GetEntriesFast(); i0++) {
+    baconhep::TGenJet *pJet = (baconhep::TGenJet*) iGen.fGenFatJets->At(i0);
+    bool pMatch = false;
+    for(int i1 = 0; i1 < int(fLeptons.size()); i1++) { 
+      if(Tools::deltaR(fLeptons[i1].Eta(),fLeptons[i1].Phi(),pJet->eta,pJet->phi) < 0.5) pMatch = true;
+    }
+    if(pMatch) continue;
+    if(pJet->pt < 15) continue;
+    insert(pJet,lVJets);
+  }
+  if(lVJets.size() >  0) fFJPt    = lVJets[0]->pt;
+  if(lVJets.size() >  0) fFJEta   = lVJets[0]->eta;
+  if(lVJets.size() >  0) fFJPhi   = lVJets[0]->phi;
+  if(lVJets.size() >  0) fFJM     = lVJets[0]->mass;
+  if(lVJets.size() >  0) fFJMTrim = lVJets[0]->mtrim;
+  if(lVJets.size() >  0) fFJT2T1  = lVJets[0]->tau2/lVJets[0]->tau1;
   /*
   baconhep::TGenJet *lCentral = 0;
   for(int i0 = 2; i0 < int(lJets.size()); i0++) {
@@ -244,12 +292,78 @@ void Jets::selectJets(GenJet &iGen) {
   */
   return;
 }
+bool Jets::matchV(GenV &iGen,baconhep::TGenJet *iJet,bool iFatJet) { 
+  bool pMatch = false;
+  if(iFatJet) { 
+    double pDR = Tools::deltaR(iGen.fBJEta,iGen.fBJPhi,iJet->eta,iJet->phi);
+    if(pDR < 0.4) pMatch = true;
+  }
+  if(!iFatJet) { 
+    double pDR = Tools::deltaR(iGen.fQ1Eta,iGen.fQ1Phi,iJet->eta,iJet->phi);
+    pDR = TMath::Min(Tools::deltaR(iGen.fQ2Eta,iGen.fQ2Phi,iJet->eta,iJet->phi),pDR);
+    if(pDR < 0.25) pMatch = true;
+  }
+  return pMatch;
+}
+void Jets::selectJets(GenV &iGen) { 
+  clearJets();
+  std::vector<baconhep::TGenJet*> lJets;
+  std::vector<baconhep::TGenJet*> lVJets;
+  for(int i0 = 0; i0 < iGen.fGenJets->GetEntriesFast(); i0++) {
+    baconhep::TGenJet *pJet = (baconhep::TGenJet*) iGen.fGenJets->At(i0);
+    bool pMatch = false;
+    for(int i1 = 0; i1 < int(fLeptons.size()); i1++) { 
+      if(Tools::deltaR(fLeptons[i1].Eta(),fLeptons[i1].Phi(),pJet->eta,pJet->phi) < 0.5) pMatch = true;
+    }
+    if(pMatch) continue;
+    if(pJet->pt > 30) fNJets++;
+    if(pJet->pt < 15) continue;
+    bool pMatchV = matchV(iGen,pJet);
+    if(!pMatchV) insert(pJet,lJets);
+    if(pMatchV)  insert(pJet,lVJets);
+  }
+  if(lVJets.size() >  0) fJetPt1  = lVJets[0]->pt;
+  if(lVJets.size() >  0) fJetEta1 = lVJets[0]->eta;
+  if(lVJets.size() >  0) fJetPhi1 = lVJets[0]->phi;
+  if(lVJets.size() >  0) fJetM1   = lVJets[0]->mass;
+  if(lVJets.size() >  1) fJetPt2  = lVJets[1]->pt;
+  if(lVJets.size() >  1) fJetEta2 = lVJets[1]->eta;
+  if(lVJets.size() >  1) fJetPhi2 = lVJets[1]->phi;
+  if(lVJets.size() >  1) fJetM2   = lVJets[1]->mass;
+  if(lJets.size() >  2) fJCPt    = lJets[0]->pt;
+  if(lJets.size() >  2) fJCEta   = lJets[0]->eta;;
+  if(lJets.size() >  2) fJCPhi   = lJets[0]->phi;
+  if(lJets.size() >  2) fJCM     = lJets[0]->mass;
+  //std::cout << " -- " <<  fJetPt1 << " -- " << fJetPt2 << " -- " << fJetEta1 << " -- "<< fJetEta2 << " ----->!!!!" << std::endl;
+  lVJets.clear();
+  for(int i0 = 0; i0 < iGen.fGenFatJets->GetEntriesFast(); i0++) {
+    baconhep::TGenJet *pJet = (baconhep::TGenJet*) iGen.fGenFatJets->At(i0);
+    bool pMatch = false;
+    for(int i1 = 0; i1 < int(fLeptons.size()); i1++) { 
+      if(Tools::deltaR(fLeptons[i1].Eta(),fLeptons[i1].Phi(),pJet->eta,pJet->phi) < 0.5) pMatch = true;
+    }
+    if(pMatch) continue;
+    if(pJet->pt < 15) continue;
+    bool pMatchV = matchV(iGen,pJet,true);
+    if(pMatchV)  insert(pJet,lVJets);
+  }
+  if(lVJets.size() >  0) fFJPt    = lVJets[0]->pt;
+  if(lVJets.size() >  0) fFJEta   = lVJets[0]->eta;
+  if(lVJets.size() >  0) fFJPhi   = lVJets[0]->phi;
+  if(lVJets.size() >  0) fFJM     = lVJets[0]->mass;
+  if(lVJets.size() >  0) fFJMTrim = lVJets[0]->mtrim;
+  if(lVJets.size() >  0) fFJT2T1  = lVJets[0]->tau2/lVJets[0]->tau1;
+  return;
+}
 void Jets::computeFinal() { 
   if(fJetPt1 == 0 || fJetPt2 == 0) return;
   TLorentzVector lVec1,lVec2;
   lVec1.SetPtEtaPhiM(fJetPt1,fJetEta1,fJetPhi1,fJetM1);
   lVec2.SetPtEtaPhiM(fJetPt2,fJetEta2,fJetPhi2,fJetM2);
   fMJJ   = (lVec1+lVec2).M();
+  fPtJJ  = (lVec1+lVec2).Pt();
+  fPhiJJ = (lVec1+lVec2).Phi();
+  fEtaJJ = (lVec1+lVec2).Eta(); 
   fJDEta =  fJetEta1-fJetEta2;
   fJDPhi = (fJetPhi1-fJetPhi2);
   if(fabs(fJDPhi) > 2.*TMath::Pi()-fabs(fJDPhi) && fJDPhi > 0)  fJDPhi -= 2.*TMath::Pi();
@@ -305,10 +419,18 @@ void Jets::smear() {
   fGJCEta   = fJCEta;
   fGJCPhi   = fJCPhi;
   fGJCM     = fJCM;
+
+  fGFJPt    = fFJPt;
+  fGFJEta   = fFJEta;
+  fGFJPhi   = fFJPhi;
+  fGFJM     = fFJM;
+  fGFJMTrim = fFJMTrim;
  
-  smear(fJetPt1,fJetEta1,fJetPhi1,fJetM1);
-  smear(fJetPt2,fJetEta2,fJetPhi2,fJetM2);
-  smear(fJCPt  ,fJCEta  ,fJCPhi  ,fJCM  );
+  if(fJetPt1 > 0) smear(fJetPt1,fJetEta1,fJetPhi1,fJetM1);
+  if(fJetPt2 > 0) smear(fJetPt2,fJetEta2,fJetPhi2,fJetM2);
+  if(fJCPt   > 0) smear(fJCPt  ,fJCEta  ,fJCPhi  ,fJCM  );
+  if(fFJPt   > 0) smear(fFJPt  ,fFJEta  ,fFJPhi  ,fFJM  );
+  fFJMTrim = fFJM/fGFJM * fFJMTrim;
 }
 void Jets::fillJets(Gen &iGen) { 
   selectJets(iGen);
@@ -316,6 +438,11 @@ void Jets::fillJets(Gen &iGen) {
   computeFinal();
 }
 void Jets::fillJets(GenJet &iGen) { 
+  selectJets(iGen);
+  smear(); 
+  computeFinal();
+}
+void Jets::fillJets(GenV &iGen) { 
   selectJets(iGen);
   smear(); 
   computeFinal();

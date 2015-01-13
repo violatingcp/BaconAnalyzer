@@ -17,7 +17,8 @@ public:
   void clearGen(int i0);
   void replace(int iId,baconhep::TGenParticle *iGen,std::vector<baconhep::TGenParticle*> &iBoson,bool iRemove);
   void findBosons(std::vector<baconhep::TGenParticle*> & iBoson);  
-  void fillGen();
+  void findBosonsPythia6(std::vector<baconhep::TGenParticle*> & iBoson);  
+  void fillGen(bool iPythia6=false);
 
   TClonesArray *fGenParts;
   TClonesArray *fGenJets;

@@ -19,8 +19,8 @@ TTree* Tools::load(std::string iName,TFile *iFile,int &iNMCEvents) {
   iFile = TFile::Open(iName.c_str());
   TTree *lTree = (TTree*)  iFile->FindObjectAny("Events");
   TH1F  *lHist = (TH1F*)   iFile->FindObjectAny("TotalEvents");
-  //if(lHist == 0) lHist = (TH1F*)  iFile->FindObjectAny("TotalEvants");
-  iNMCEvents = lHist->GetEntries();
+  if(lHist == 0) lHist = (TH1F*)  iFile->FindObjectAny("TotalEvants");
+  //iNMCEvents = lHist->GetEntries();
   return lTree;
   iNMCEvents = 1.;
 }

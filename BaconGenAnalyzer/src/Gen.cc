@@ -143,10 +143,28 @@ void Gen::findBosons(std::vector<baconhep::TGenParticle*> & iBoson) {
     if(pBoson == -1) iBoson.push_back(pGen);
   }
 }
+void Gen::findBosonsPythia6(std::vector<baconhep::TGenParticle*> & iBoson) { 
+  for(int i0 = 0; i0 < fGenParts->GetEntriesFast(); i0++) { 
+    baconhep::TGenParticle *pGen = (baconhep::TGenParticle*) fGenParts->At(i0);
+    if(fabs(pGen->pdgId) != 23 && fabs(pGen->pdgId) != 24) continue;
+    int pBoson = -1;
+    for(unsigned int i1 = 0; i1 < iBoson.size(); i1++) { 
+      if(Tools::deltaR(pGen->eta,pGen->phi,iBoson[i1]->eta,iBoson[i1]->phi) < 0.5) {
+	if(pGen->status < iBoson[i1]->status ) pBoson = i1; 
+	continue;
+      }
+      if(pGen->pt > iBoson[i1]->pt && (pBoson == -1 && iBoson.size() > 1)) pBoson = 10 + i1;
+    }
+    if(pBoson <  10) replace(pBoson,   pGen,iBoson,true);
+    if(pBoson >   9) replace(pBoson-10,pGen,iBoson,false);
+    if(pBoson == -1) iBoson.push_back(pGen);
+  }
+}
 //void bosonPtCheck()
-void Gen::fillGen() {
+void Gen::fillGen(bool iPythia6) {
   std::vector<baconhep::TGenParticle*> lBosons;
-  findBosons(lBosons); 
+  if(!iPythia6) findBosons(lBosons); 
+  if(iPythia6 ) findBosonsPythia6(lBosons); 
   TLorentzVector lVMass; 
   lVMass .SetPtEtaPhiM(0,0,0,0);
   TLorentzVector lLep1; lLep1.SetPtEtaPhiM(fPt1,fEta1,fPhi1,fM1);

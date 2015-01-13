@@ -15,9 +15,11 @@ void GenJet::loadGen(TTree *iTree) {
   baconhep::TGenJet      ::Class() ->IgnoreTObjectStreamer();
   fGenParts          = new TClonesArray("baconhep::TGenParticle");
   fGenJets           = new TClonesArray("baconhep::TGenJet");
+  fGenFatJets        = new TClonesArray("baconhep::TGenJet");
   iTree->SetBranchAddress("GenEvtInfo"   ,&fGen);         fGenBr         = iTree->GetBranch("GenEvtInfo"  ); 
   iTree->SetBranchAddress("GenParticle"  ,&fGenParts);    fGenPartBr     = iTree->GetBranch("GenParticle" ); 
   iTree->SetBranchAddress("GenJet"       ,&fGenJets);     fGenJetBr      = iTree->GetBranch("GenJet"      ); 
+  iTree->SetBranchAddress("GenFatJet"    ,&fGenFatJets);  fGenFatJetBr   = iTree->GetBranch("GenFatJet"   ); 
 }
 void GenJet::setupGenTree(TTree *iTree) {
   iTree->Branch("decaymode",&fDecay    ,"fDecay/I");
@@ -30,11 +32,11 @@ void GenJet::setupGenTree(TTree *iTree) {
   iTree->Branch("v_m"     ,&fVM,    "fVM/F");
   //  iTree->Branch("v_id"    ,&fVId,   "fVId/I");
 
-  iTree->Branch("x_pt"    ,&fV1Pt,   "fV1Pt/F");
-  iTree->Branch("x_eta"   ,&fV1Eta,  "fV1Eta/F");
-  iTree->Branch("x_phi"   ,&fV1Phi,  "fV1Phi/F");
-  iTree->Branch("x_m"     ,&fV1M,    "fV1M/F");
-  iTree->Branch("x_id"    ,&fV1Id,   "fV1Id/I");
+  iTree->Branch("dm_pt"    ,&fV1Pt,   "fV1Pt/F");
+  iTree->Branch("dm_eta"   ,&fV1Eta,  "fV1Eta/F");
+  iTree->Branch("dm_phi"   ,&fV1Phi,  "fV1Phi/F");
+  iTree->Branch("dm_m"     ,&fV1M,    "fV1M/F");
+  iTree->Branch("dm_id"    ,&fV1Id,   "fV1Id/I");
 
   iTree->Branch("j1_pt"    ,&fJ1Pt,   "fV1Pt/F");
   iTree->Branch("j1_eta"   ,&fJ1Eta,  "fV1Eta/F");
@@ -104,18 +106,52 @@ void GenJet::findBosons(std::vector<baconhep::TGenParticle*> & iBoson,int iIdMin
     if(pBoson == -1) iBoson.push_back(pGen);
   }
 }
-void GenJet::fillGen() {
+void GenJet::findBosonsPythia6(std::vector<baconhep::TGenParticle*> & iBoson,int iIdMin,int iIdMax,int iStatus) { 
+  for(int i0 = 0; i0 < fGenParts->GetEntriesFast(); i0++) { 
+    baconhep::TGenParticle *pGen = (baconhep::TGenParticle*) fGenParts->At(i0);
+    if(fabs(pGen->pdgId)  <  iIdMin ) continue;
+    if(fabs(pGen->pdgId)  >  iIdMax ) continue;
+    if(fabs(pGen->status) != iStatus) continue;
+    if(pGen->pt == 0) continue;
+    int pBoson = -1;
+    for(unsigned int i1 = 0; i1 < iBoson.size(); i1++) { 
+      if(Tools::deltaR(pGen->eta,pGen->phi,iBoson[i1]->eta,iBoson[i1]->phi) < 0.5 || (pGen->pdgId == 32 && iBoson[i1]->pdgId == 32) ) {
+	if(pGen->status < iBoson[i1]->status  ) pBoson = i1; 
+	continue;
+      }
+      if(pGen->pt > iBoson[i1]->pt && (pBoson == -1 && iBoson.size() > 1) && i1 > 0) pBoson = 10 + i1;
+    }
+    if(pBoson <  10 && pBoson > -1) replace(pBoson,   pGen,iBoson,true);
+    if(pBoson >   9)                replace(pBoson-10,pGen,iBoson,false);
+    if(pBoson == -1) iBoson.push_back(pGen);
+  }
+}
+void GenJet::fillGen(bool iPy6) {
   std::vector<baconhep::TGenParticle*> lBosons;
+  std::vector<baconhep::TGenParticle*> lHiggs;
   std::vector<baconhep::TGenParticle*> lJets;
   //findBosons(lBosons,24,24); 
-  findBosons(lBosons,32,32); 
-  findBosons(lBosons, 0,10); 
-  findBosons(lBosons,21,21); 
+  if(iPy6) { 
+    //findBosonsPythia6(lBosons,18,18,1); 
+    //findBosonsPythia6(lBosons,16,16,1); 
+    //findBosonsPythia6(lBosons,14,14,1); 
+    //findBosonsPythia6(lBosons,12,12,1); 
+    findBosonsPythia6(lBosons,25,25,2); 
+    findBosonsPythia6(lHiggs ,25,25,3); 
+    //findBosons(lBosons, 0,10); 
+    //findBosons(lBosons,21,21);
+  } else {
+    findBosons(lBosons,32,32); 
+    findBosons(lBosons, 0,10); 
+    findBosons(lBosons,21,21); 
+  }
   TLorentzVector lVMass; 
   lVMass .SetPtEtaPhiM(0.0,0,0,0);
-  if( lBosons.size() > 2) std::cout << "Xsoze---> " << lBosons.size() << std::endl;
-  if( lBosons.size() > 2) std::cout <<" -XXX-> " << lBosons[1]->pdgId << std::endl;
-  for(int i0 = 0; i0 < TMath::Min(int(lBosons.size()),2); i0++) { 
+  //if( lBosons.size() > 2) std::cout << "Xsoze---> " << lBosons.size() << std::endl;
+  //if( lBosons.size() > 2) std::cout <<" -XXX-> " << lBosons[1]->pdgId << std::endl;
+  int lMin = 2; 
+  if(iPy6) lMin = 1000;
+  for(int i0 = 0; i0 < TMath::Min(int(lBosons.size()),lMin); i0++) { 
     TLorentzVector pVec;
     pVec.SetPtEtaPhiM(lBosons[i0]->pt,lBosons[i0]->eta,lBosons[i0]->phi,lBosons[i0]->mass);
     if(i0 == 0) { 
@@ -140,4 +176,17 @@ void GenJet::fillGen() {
   fVEta    = lVMass.Eta();
   fVPhi    = lVMass.Phi();
   fVM      = lVMass.M();
+  if(lHiggs.size() > 0)  { 
+    fVPt     = lHiggs[0]->pt;
+    fVEta    = lHiggs[0]->eta;
+    fVPhi    = lHiggs[0]->phi;
+    fVM      = lHiggs[0]->mass;
+  }
+  if(iPy6) { 
+    fV1Pt  = lVMass.Pt();
+    fV1Eta = lVMass.Eta();
+    fV1Phi = lVMass.Phi();
+    fV1M   = lVMass.M();
+    fV1Id  = 18;
+  }
 }

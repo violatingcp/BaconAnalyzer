@@ -9,6 +9,7 @@
 #include "TRandom2.h"
 #include "Gen.hh"
 #include "GenJet.hh"
+#include "GenV.hh"
 
 class Jets{ 
 public:
@@ -20,12 +21,15 @@ public:
   void buildLeptonVec(Gen &iGen);
   void selectJets(Gen    &iGen);
   void selectJets(GenJet &iGen);
+  void selectJets(GenV   &iGen);
   void computeFinal();
   void setSmear(int iBin);
   void smear(float &iJPt,float &iJEta,float &iJPhi,float &iJM);
   void smear();
+  bool matchV(GenV &iGen,baconhep::TGenJet *iJet,bool iFatJet=false);
   void fillJets(Gen    &iGen);
   void fillJets(GenJet &iGen);
+  void fillJets(GenV   &iGen);
   void insert(baconhep::TGenJet *iJet,std::vector<baconhep::TGenJet*> &lJets);
   std::vector<TLorentzVector> fLeptons;
   
@@ -46,6 +50,13 @@ public:
   float fJCPhi;
   float fJCM;
   int   fJCId;
+
+  float fFJPt;
+  float fFJEta;
+  float fFJPhi;
+  float fFJM;
+  float fFJMTrim;
+  int   fFJId;
   
   float fGJetPt1;
   float fGJetEta1;
@@ -59,10 +70,22 @@ public:
   float fGJCEta;
   float fGJCPhi;
   float fGJCM;
+
+  float fGFJPt;
+  float fGFJEta;
+  float fGFJPhi;
+  float fGFJM;
+  float fGFJMTrim;
+  float fFJT2T1;
+  int   fGFJId;
   float fNJets;
 private: 
   
   float fMJJ;
+  float fPtJJ;
+  float fEtaJJ;
+  float fPhiJJ;
+  
   float fJDEta;
   float fJDPhi;
   

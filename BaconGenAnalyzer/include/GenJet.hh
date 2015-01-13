@@ -17,10 +17,12 @@ public:
   void clearGen(int i0);
   void replace(int iId,baconhep::TGenParticle *iGen,std::vector<baconhep::TGenParticle*> &iBoson,bool iRemove);
   void findBosons(std::vector<baconhep::TGenParticle*> & iBoson,int iIdMin,int iIdMax);
-  void fillGen();
+  void findBosonsPythia6(std::vector<baconhep::TGenParticle*> & iBoson,int iIdMin,int iIdMax,int iStatus);
+  void fillGen(bool iPy6=false);
 
   TClonesArray *fGenParts;
   TClonesArray *fGenJets;
+  TClonesArray *fGenFatJets;
 
   //Decay Mode
   int   fDecay; 
@@ -49,6 +51,7 @@ private:
   TBranch      *fGenBr;
   TBranch      *fGenPartBr;
   TBranch      *fGenJetBr;
+  TBranch      *fGenFatJetBr;
   baconhep::TGenEventInfo     *fGen;
 };
 #endif
