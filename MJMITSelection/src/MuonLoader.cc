@@ -144,8 +144,8 @@ bool MuonLoader::passLoose(TMuon *iMuon) {
   if(!(iMuon->selectorBits & kAllArbitrated))                        return false;
   if(!(iMuon->typeBits     & kPFMuon))                               return false;
   if(fabs(iMuon->dz)> 1.0)                                           return false;
-  double chargedIso = iMuon->chHadIso04;
-  double neutralIso = TMath::Max(iMuon->gammaIso04 + iMuon->neuHadIso04 - 0.5 * iMuon->puIso04, 0.0);
+  double chargedIso = iMuon->chHadIso;
+  double neutralIso = TMath::Max(iMuon->gammaIso + iMuon->neuHadIso - 0.5 * iMuon->puIso, 0.0);
   double totalIso   = chargedIso+neutralIso;
   if(totalIso/iMuon->pt > 0.4) return false;
   return true;
@@ -169,8 +169,8 @@ bool MuonLoader::passWW(TMuon *iMuon) {
   if(!(iMuon->trkKink        < 20.    ))                               return false;
   if(fabs(iMuon->dz)> 1.0)                                             return false;
   //replace with very loose delta beta iso
-  double chargedIso = iMuon->chHadIso04;
-  double neutralIso = TMath::Max(iMuon->gammaIso04 + iMuon->neuHadIso04 - 0.5 * iMuon->puIso04, 0.0);
+  double chargedIso = iMuon->chHadIso;
+  double neutralIso = TMath::Max(iMuon->gammaIso + iMuon->neuHadIso - 0.5 * iMuon->puIso, 0.0);
   double totalIso   = chargedIso+neutralIso;
   if(totalIso/iMuon->pt > 0.4) return false;
   return true;
@@ -187,8 +187,8 @@ bool MuonLoader::passTight(TMuon *iMuon) {
   if(!(iMuon->typeBits & kPFMuon))  return false;
 
 
-  double chargedIso = iMuon->chHadIso04;
-  double neutralIso = TMath::Max(iMuon->gammaIso04 + iMuon->neuHadIso04 - 0.5 * iMuon->puIso04, 0.0);
+  double chargedIso = iMuon->chHadIso;
+  double neutralIso = TMath::Max(iMuon->gammaIso + iMuon->neuHadIso - 0.5 * iMuon->puIso, 0.0);
   double totalIso   = chargedIso+neutralIso;
   if(totalIso/iMuon->pt > 0.15) return false;
   return true;

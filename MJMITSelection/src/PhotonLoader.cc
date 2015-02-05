@@ -83,8 +83,8 @@ bool PhotonLoader::passLoose(TPhoton *photon) {
   if(photon->pt     < 15)   return false;
   if(photon->hovere > 0.05) return false;
   if(photon->sieie  > 0.01) return false;
-  double chargedIso = photon->chHadIso03;
-  double neutralIso = photon->gammaIso03 + photon->neuHadIso03;
+  double chargedIso = photon->chHadIso;
+  double neutralIso = photon->gammaIso + photon->neuHadIso;
   double totalIso   = chargedIso+neutralIso;
   if(totalIso/photon->pt > 0.4) return false;
   return true;
@@ -99,19 +99,19 @@ bool PhotonLoader::passCiCPhotonPre(TPhoton *p,float iRho) {
     if(lIsBarrel  && p->sieie > 0.014) return false; 
     if(!lIsBarrel && p->sieie > 0.034) return false; 
     //Note these iso were not PF 
-    if(p->gammaIso03 -0.012*p->pt > 4)  return false; 
-    if(p->neuHadIso03-0.005*p->pt > 4)  return false; 
+    if(p->gammaIso -0.012*p->pt > 4)  return false; 
+    if(p->neuHadIso-0.005*p->pt > 4)  return false; 
   }
   if(p->r9 > 0.9) { 
     if( lIsBarrel && p->hovere > 0.082) return false;
     if(!lIsBarrel && p->hovere > 0.075) return false;
     if( lIsBarrel && p->sieie  > 0.014) return false;
     if(!lIsBarrel && p->sieie  > 0.034) return false;
-    if(p->gammaIso03 -0.012*p->pt > 50)  return false; 
-    if(p->neuHadIso03-0.005*p->pt > 50)  return false; 
+    if(p->gammaIso  - 0.012*p->pt > 50)  return false; 
+    if(p->neuHadIso - 0.005*p->pt > 50)  return false; 
   }
-  if(p->chHadIso03             < 2.8) return false;  //This is not really correct, but close
-  if((p->neuHadIso03 + p->gammaIso03)-0.17*iRho < 3  ) return false;
+  if(p->chHadIso             < 2.8) return false;  //This is not really correct, but close
+  if((p->neuHadIso + p->gammaIso)-0.17*iRho < 3  ) return false;
   return true;
 }
 bool PhotonLoader::passCiCPFIso(TPhoton *p,float iRho) { 
@@ -131,9 +131,9 @@ bool PhotonLoader::passCiCPFIso(TPhoton *p,float iRho) {
     0.124, 0.092, 0.142, 0.063,
     0.94, 0.28, 0.94, 0.24 }; 
   bool lPass = false;
-  if((p->gammaIso03+p->hcalIso04+p->chHadIso03 - 0.17*iRho)*50./p->pt < cic4_allcuts_temp_sublead[lCat-1+0*4] && 
-     (p->ecalIso04 +p->hcalIso04+p->chHadIso03 - 0.52*iRho)*50./p->pt < cic4_allcuts_temp_sublead[lCat-1+1*4] && //Note the track Iso here is 04 not 03 in reality + worst Vtx is used (!==?)
-     p->chHadIso03/p->pt                                              < cic4_allcuts_temp_sublead[lCat-1+2*4] && 
+  if((p->gammaIso+p->hcalIso+p->chHadIso - 0.17*iRho)*50./p->pt < cic4_allcuts_temp_sublead[lCat-1+0*4] && 
+     (p->ecalIso +p->hcalIso+p->chHadIso - 0.52*iRho)*50./p->pt < cic4_allcuts_temp_sublead[lCat-1+1*4] && //Note the track Iso here is 04 not 03 in reality + worst Vtx is used (!==?)
+     p->chHadIso/p->pt                                              < cic4_allcuts_temp_sublead[lCat-1+2*4] && 
      p->sieie                                                         < cic4_allcuts_temp_sublead[lCat-1+3*4] && 
      p->hovere                                                        < cic4_allcuts_temp_sublead[lCat-1+4*4] && 
      p->r9							      > cic4_allcuts_temp_sublead[lCat-1+5*4])  lPass = true;

@@ -99,7 +99,7 @@ bool  ElectronLoader::passVeto(const TElectron *electron, const float iRho) {
   // barrel/endcap dependent requirments      
   if(fabs(electron->scEta)<=ECAL_GAP_LOW) {
     // barrel
-    double iso =  electron->chHadIso03 + TMath::Max(electron->neuHadIso03 + electron->gammaIso03 - iRho*ea, 0.);
+    double iso =  electron->chHadIso + TMath::Max(electron->neuHadIso + electron->gammaIso - iRho*ea, 0.);
     if(iso > 0.15*(electron->pt)) return false;
      
     if(electron->sieie  > 0.01)                       return false;
@@ -110,7 +110,7 @@ bool  ElectronLoader::passVeto(const TElectron *electron, const float iRho) {
   
   } else {
     // endcap
-    Double_t iso = electron->chHadIso03 + TMath::Max(electron->neuHadIso03 + electron->gammaIso03 - iRho*ea, 0.);
+    Double_t iso = electron->chHadIso + TMath::Max(electron->neuHadIso + electron->gammaIso - iRho*ea, 0.);
     if(iso > 0.15*(electron->pt))                           return false;
     if(electron->sieie  > 0.03)                       return false;
     if(fabs(electron->dPhiIn) < 0.03)                   return false;
@@ -131,7 +131,7 @@ bool ElectronLoader::passLoose(const TElectron *ele,float iRho) {
   if(fabs(ele->d0)    >= 0.5) return false;
   if(fabs(ele->dz)    >= 1.0) return false;
   
-  int ptBin = (ele->ptHZZ4l > 10) ? 1 : 0;
+  int ptBin = (ele->pt > 10) ? 1 : 0;
   int etaBin = -1;
   if     (fabs(ele->scEta) < 0.8)   etaBin = 0;
   else if(fabs(ele->scEta) < 1.479) etaBin = 1;
@@ -142,7 +142,7 @@ bool ElectronLoader::passLoose(const TElectron *ele,float iRho) {
   if(ptBin == 1 && etaBin == 0) return (ele->mva > ELE_REFERENCE_IDMVA_CUT_BIN3);
   if(ptBin == 1 && etaBin == 1) return (ele->mva > ELE_REFERENCE_IDMVA_CUT_BIN4);
   if(ptBin == 1 && etaBin == 2) return (ele->mva > ELE_REFERENCE_IDMVA_CUT_BIN5);
-  double lIso = ele->chHadIso04 + TMath::Max(ele->gammaIso04 + ele->neuHadIso04 - iRho*getEffArea(ele->scEta), 0.);
+  double lIso = ele->chHadIso + TMath::Max(ele->gammaIso + ele->neuHadIso - iRho*getEffArea(ele->scEta), 0.);
   if(lIso/ele->pt > 0.4) return kFALSE;
   return true;
 }
@@ -160,7 +160,7 @@ bool ElectronLoader::passVBTF95(const TElectron *iEle) {
   // conversion rejection
   if(iEle->nMissingHits > 1) return false;
   if(iEle->isConv)           return false;
-  double lIso = iEle->chHadIso03 + iEle->neuHadIso03 + iEle->gammaIso03;
+  double lIso = iEle->chHadIso + iEle->neuHadIso + iEle->gammaIso;
   //std::cout << " here : " << iEle->pt << " -- " << lIso/iEle->pt << " - " << std::endl;
   
   if(fabs(iEle->scEta) < ECAL_GAP_LOW && lIso/iEle->pt > 0.13) return false;

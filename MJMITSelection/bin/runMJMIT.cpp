@@ -6,7 +6,7 @@
 #include "../include/MuonLoader.hh"
 #include "../include/LeptonLoader.hh"
 #include "../include/PhotonLoader.hh"
-#include "../include/TauLoader.hh"
+//#include "../include/TauLoader.hh"
 #include "../include/JetLoader.hh"
 #include "../include/RunLumiRangeMap.h"
 
@@ -22,7 +22,7 @@ EvtLoader       *fEvt      = 0;
 MuonLoader      *fMuon     = 0; 
 ElectronLoader  *fElectron = 0; 
 LeptonLoader    *fLepton   = 0; 
-TauLoader       *fTau      = 0; 
+//TauLoader       *fTau      = 0; 
 PhotonLoader    *fPhoton   = 0; 
 JetLoader       *fJet      = 0; 
 RunLumiRangeMap *fRangeMap = 0; 
@@ -57,7 +57,7 @@ int main( int argc, char **argv ) {
   fMuon     = new MuonLoader    (lTree);
   fElectron = new ElectronLoader(lTree);
   fLepton   = new LeptonLoader  (lTree);
-  fTau      = new TauLoader     (lTree); 
+  //fTau      = new TauLoader     (lTree); 
   fPhoton   = new PhotonLoader  (lTree); 
   fJet      = new JetLoader     (lTree);
   if(lGen == 1) fGen      = new GenLoader     (lTree);
@@ -72,33 +72,34 @@ int main( int argc, char **argv ) {
   fMuon    ->setupTree      (lOut); 
   fElectron->setupTree      (lOut); 
   fLepton  ->setupTree      (lOut); 
-  fTau     ->setupTree      (lOut); 
+  //fTau     ->setupTree      (lOut); 
   fPhoton  ->setupTree      (lOut); 
   if(lGen == 1) fGen ->setupTree (lOut);
+
   //Add the triggers we want
-  fEvt ->addTrigger("HLT_MonoCentralPFJet80_PFMETnoMu105_NHEF0p95_v*");
-  fEvt ->addTrigger("HLT_MonoCentralPFJet80_PFMETnoMu95_NHEF0p95_v*");
-  fEvt ->addTrigger("HLT_DiPFJet40_PFMETnoMu65_MJJ800VBF_AllJets_v*");
+  fEvt ->addTrigger("HLT_PFMET170_NoiseCleaned_v*");
+  fEvt ->addTrigger("HLT_PFHT350_PFMET120_NoiseCleaned_v*");
+  fEvt ->addTrigger("HLT_PFMET120_NoiseCleaned_BTagCSV07_v*");
+  fEvt ->addTrigger("HLT_PFJet260_v*");
+  fEvt ->addTrigger("HLT_AK8PFJet360TrimMod_Mass30_v*");
+  fEvt ->addTrigger("HLT_IsoTkMu24_eta2p1_IterTrk02_v*");
 
-  fEvt ->addTrigger("HLT_MET80_Parked_v*");
-  fEvt ->addTrigger("HLT_MET80_Parked_v*");
-  fEvt ->addTrigger("HLT_MET100_HBHENoiseCleaned_v*");
-  fEvt ->addTrigger("HLT_MET120_HBHENoiseCleaned_v*");
-
-  fJet ->addTrigger("HLT_MonoCentralPFJet80_PFMETnoMu105_NHEF0p95_v*");
-  fJet ->addTrigger("HLT_DiPFJet40_PFMETnoMu65_MJJ800VBF_AllJets_v*");
+  fJet ->addTrigger("HLT_PFJet260_v*");
+  fJet ->addTrigger("HLT_AK8PFJet360TrimMod_Mass30_v*");
+  fJet ->addTrigger("HLT_IsoTkMu24_eta2p1_IterTrk02_v*");
 
   for(int i0 = 0; i0 < maxEvents; i0++) { 
     if(i0 % 1000 == 0) std::cout << "===> Processed " << i0 << " - Done : " << (float(i0)/float(maxEvents)) << " -- " << lDMu << std::endl;
     //Load event and require trigger
     std::vector<TLorentzVector> lVetoes; 
-    //Select Di Muon
+    //Select Di Muon in Dimuon control region 
     if(lDMu > 0) fMuon->load(i0);
     if(lDMu > 0) fMuon->selectDiMuon(lVetoes);
-    if(lDMu > 0 && lVetoes.size() < 1) continue;
+    //Select Either 1 or 2 muons
+    if(lDMu > 0 && lVetoes.size() < 1) continue; 
     if(lDMu > 0 && lVetoes.size() > 2) continue;
     fEvt     ->load(i0);
-    //Select  PHoton
+    //Select  PHoton in photon cotrol region
     if(lDMu < 0) fPhoton->load(i0);
     if(lDMu < 0) if(!fPhoton->selectPhoton(lVetoes,fEvt->fRho))  continue;
     if(lDMu < 0) fMuon  ->setDiMuon(lVetoes[0]);
@@ -108,28 +109,34 @@ int main( int argc, char **argv ) {
     //if(lDMu == 0) if(!fEvt->passSkim()) continue;
 
     ///Normal processing afterwards
-    if(lGen == 0 && !passEvent(fEvt->fRun,fEvt->fLumi)) continue;
-
+    //if(lGen == 0 && !passEvent(fEvt->fRun,fEvt->fLumi)) continue;
+    
+    //Load Muons in Signal control region
     if(lDMu == 0) fMuon    ->load(i0);    
     fMuon    ->selectMuons(lVetoes);
     fMuon    ->fillVetoes(lVetoes);
-    
+
+    //Load and fill Electrons
     fElectron->load(i0);
     fElectron->selectElectrons(fEvt->fRho,lVetoes); //Add a muon veto?
     fElectron->fillVetoes(lVetoes);
-
+    //Fill some weird Lepton objects
     fLepton  ->fillLeptons(fMuon->fSelMuons,fElectron->fSelElectrons); 
+    
+    //Load and fill Taus (not using yet)
+    //fTau     ->load(i0);
+    //fTau     ->selectTaus(lVetoes);
+    //fTau     ->fillVetoes(lVetoes);
 
-    fTau     ->load(i0);
-    fTau     ->selectTaus(lVetoes);
-    fTau     ->fillVetoes(lVetoes);
-
+    //Load and fill Photons
     if(lDMu > -1) fPhoton  ->load(i0);
     fPhoton  ->selectPhotons(lVetoes,fEvt->fRho);
     
+    //Finally the Jets
     fJet->load(i0); 
     fJet->selectJets(lVetoes,fEvt->fRho);
 
+    //And the Gen
     if(lGen == 1) fGen->load(i0);
     if(lGen == 1) fGen->selectBoson();
     if(lGen == 1) fGen->fillGenEvent();

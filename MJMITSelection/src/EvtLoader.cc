@@ -11,9 +11,9 @@ EvtLoader::EvtLoader(TTree *iTree,std::string iName,std::string iHLTFile,std::st
   fEvtBr    = iTree->GetBranch("Info");
   fTrigger  = new TTrigger(iHLTFile);
   
-  fVertices = new TClonesArray("baconhep::TVertex");
-  iTree->SetBranchAddress("PV",       &fVertices);
-  fVertexBr   = iTree->GetBranch("PV");
+  //fVertices = new TClonesArray("baconhep::TVertex");
+  //iTree->SetBranchAddress("PV",       &fVertices);
+  //fVertexBr   = iTree->GetBranch("PV");
   
   TFile *lFile = new TFile(iPUWeight.c_str()); 
   fPUWeightHist = (TH1F*) lFile->FindObjectAny("pileup");
@@ -23,8 +23,8 @@ EvtLoader::EvtLoader(TTree *iTree,std::string iName,std::string iHLTFile,std::st
 EvtLoader::~EvtLoader() { 
   delete  fEvt;
   delete  fEvtBr;
-  delete  fVertices;
-  delete  fVertexBr;
+  //delete  fVertices;
+  //delete  fVertexBr;
 }
 void EvtLoader::reset() { 
   fRun       = 0;
@@ -53,29 +53,10 @@ void EvtLoader::reset() {
 
   fTKMet     = 0; 
   fTKMetPhi  = 0; 
-  fMVAMet    = 0; 
-  fMVAMetPhi = 0; 
-  
-  fMVAMetUnity    = 0; 
-  fMVAMetUnityPhi = 0; 
-
-  fMVAMetCov00 = 0; 
-  fMVAMetCov01 = 0; 
-  fMVAMetCov10 = 0; 
-  fMVAMetCov11 = 0; 
-  fMVAMetSig   = 0;
-
-  fMVAMetUnityCov00 = 0; 
-  fMVAMetUnityCov01 = 0; 
-  fMVAMetUnityCov10 = 0; 
-  fMVAMetUnityCov11 = 0; 
-  fMVAMetUnitySig   = 0;
 
   fMtTrue         = 0;
   fRawMtTrue      = 0;
   fTKMtTrue       = 0;
-  fMVAMtTrue      = 0;
-  fMVAMtUnityTrue = 0;
 }
 void EvtLoader::setupTree(TTree *iTree,float iWeight) { 
   reset();
@@ -90,7 +71,7 @@ void EvtLoader::setupTree(TTree *iTree,float iWeight) {
   fTree->Branch("npu"           ,&fNPU           ,"fNPU/i");
   fTree->Branch("npuPlusOne"    ,&fNPUP          ,"fNPUP/i");
   fTree->Branch("npuMinusOne"   ,&fNPUM          ,"fNPUM/i");
-  fTree->Branch("nvtx"          ,&fNVtx          ,"fNVtx/i");
+  //fTree->Branch("nvtx"          ,&fNVtx          ,"fNVtx/i");
   fTree->Branch("metFiltersWord",&fMetFilters    , "fMetFilters/I");
   fTree->Branch("scale1fb"      ,&fScale         ,"fScale/F");  fScale = iWeight;
   fTree->Branch("rho"           ,&fRho           ,"fRho/F");
@@ -102,39 +83,21 @@ void EvtLoader::setupTree(TTree *iTree,float iWeight) {
   fTree->Branch("metphi"        ,&fMetPhi        ,"fMetPhi/F");
   fTree->Branch("tkmet"         ,&fTKMet         ,"fTKMet/F");
   fTree->Branch("tkmetphi"      ,&fTKMetPhi      ,"fTKMetPhi/F");
-  fTree->Branch("mvamet"        ,&fMVAMet        ,"fMVAMet/F");
-  fTree->Branch("mvametphi"     ,&fMVAMetPhi     ,"fMVAMetPhi/F");
-  fTree->Branch("mvametu"       ,&fMVAMetUnity   ,"fMVAMet/F");
-  fTree->Branch("mvametuphi"    ,&fMVAMetUnityPhi,"fMVAMetPhi/F");
 
   fTree->Branch("mttrue"         ,&fMtTrue        ,"fMtTrue/F");
   fTree->Branch("rawmttrue"      ,&fRawMtTrue     ,"fRawMtTrue/F");
   fTree->Branch("tkmttrue"       ,&fTKMtTrue      ,"fTKMtTrue/F");
-  fTree->Branch("mvamttrue"      ,&fMVAMtTrue     ,"fMVAMtTrue/F");
-  fTree->Branch("mvamtutrue"     ,&fMVAMtUnityTrue,"fMVAMtUnityTrue/F");
-
+  
   fTree->Branch("metCov00"      ,&fMetCov00      ,"fMetCov00/F");
   fTree->Branch("metCov10"      ,&fMetCov10      ,"fMetCov10/F");
   fTree->Branch("metCov01"      ,&fMetCov01      ,"fMetCov01/F");
   fTree->Branch("metCov11"      ,&fMetCov11      ,"fMetCov11/F");
   fTree->Branch("metSig"        ,&fMetSig        ,"fMetSig/F");
-
-  fTree->Branch("mvaCov00"      ,&fMVAMetCov00   ,"fMVAMetCov00/F");
-  fTree->Branch("mvaCov10"      ,&fMVAMetCov10   ,"fMVAMetCov10/F");
-  fTree->Branch("mvaCov01"      ,&fMVAMetCov01   ,"fMVAMetCov01/F");
-  fTree->Branch("mvaCov11"      ,&fMVAMetCov11   ,"fMVAMetCov11/F");
-  fTree->Branch("mvaMetSig"     ,&fMVAMetSig     ,"fMVAMetSig/F");
-
-  fTree->Branch("mvaUCov00"     ,&fMVAMetUnityCov00   ,"fMVAMetCovUnity00/F");
-  fTree->Branch("mvaUCov10"     ,&fMVAMetUnityCov10   ,"fMVAMetUnityCov10/F");
-  fTree->Branch("mvaUCov01"     ,&fMVAMetUnityCov01   ,"fMVAMetUnityCov01/F");
-  fTree->Branch("mvaUCov11"     ,&fMVAMetUnityCov11   ,"fMVAMetUnityCov11/F");
-  fTree->Branch("mvaMetUSig"    ,&fMVAMetUnitySig     ,"fMVAMetUnitySig/F");
 }
 void EvtLoader::load(int iEvent) { 
-  fVertices ->Clear();
+  //fVertices ->Clear();
   fEvtBr    ->GetEntry(iEvent);
-  fVertexBr ->GetEntry(iEvent);
+  //fVertexBr ->GetEntry(iEvent);
 }
 //MonoCentralPFJet80_PFMETnoMu
 //HLT_DiPFJet40_PFMETnoMu65_MJJ800VBF_AllJets_v
@@ -177,7 +140,7 @@ void EvtLoader::fillEvent(std::vector<TLorentzVector> &iVecCorr) {
   fNPU        = fEvt->nPUmean;
   fNPUM       = fEvt->nPUmeanm;
   fNPUP       = fEvt->nPUmeanp;
-  fNVtx       = nVtx();
+  //fNVtx       = nVtx();
   fITrigger   = triggerBit();
   fPUWeight   = puWeight(fNPU); 
   fMetFilters = metFilter(fEvt->metFilterFailBits);
@@ -194,25 +157,10 @@ void EvtLoader::fillEvent(std::vector<TLorentzVector> &iVecCorr) {
   fMetCov01   = fEvt->pfMETCov01;
   fMetCov10   = fEvt->pfMETCov01;
   fMetCov11   = fEvt->pfMETCov11;
-  fMetSig     = metSig(fMet,fMetPhi,fMetCov00,fMetCov01,fMetCov10,fMetCov11);
+  //fMetSig     = metSig(fMet,fMetPhi,fMetCov00,fMetCov01,fMetCov10,fMetCov11);
 
   fTKMet      = fEvt->trkMET;
   fTKMetPhi   = fEvt->trkMETphi;
-  fMVAMet     = fEvt->mvaMET0;
-  fMVAMetPhi  = fEvt->mvaMET0phi;
-  fMVAMetCov00     = fEvt->mvaMET0Cov00;
-  fMVAMetCov01     = fEvt->mvaMET0Cov01;
-  fMVAMetCov10     = fEvt->mvaMET0Cov01;
-  fMVAMetCov11     = fEvt->mvaMET0Cov11;
-  fMVAMetSig       = metSig(fMVAMet,fMVAMetPhi,fMVAMetCov00,fMVAMetCov01,fMVAMetCov10,fMVAMetCov11);
-
-  fMVAMetUnity          = fEvt->mvaMETU;
-  fMVAMetUnityPhi       = fEvt->mvaMETUphi;
-  fMVAMetUnityCov00     = fEvt->mvaMETUCov00;
-  fMVAMetUnityCov01     = fEvt->mvaMETUCov01;
-  fMVAMetUnityCov10     = fEvt->mvaMETUCov01;
-  fMVAMetUnityCov11     = fEvt->mvaMETUCov11;
-  fMVAMetUnitySig       = metSig(fMVAMetUnity,fMVAMetUnityPhi,fMVAMetUnityCov00,fMVAMetUnityCov01,fMVAMetUnityCov10,fMVAMetUnityCov11);
 
   TLorentzVector lCorr(0,0,0,0);
   for(unsigned int i0 =0; i0 < iVecCorr.size(); i0++) { 
@@ -222,19 +170,13 @@ void EvtLoader::fillEvent(std::vector<TLorentzVector> &iVecCorr) {
   fMtTrue                = mT(fMet,        fMetPhi,        lCorr);
   fRawMtTrue             = mT(fMetRaw,     fMetRawPhi,     lCorr);
   fTKMtTrue              = mT(fTKMet,      fTKMetPhi,      lCorr);
-  fMVAMtTrue             = mT(fMVAMet,     fMVAMetPhi,     lCorr);
-  fMVAMtUnityTrue        = mT(fMVAMetUnity,fMVAMetUnityPhi,lCorr);
 
   //Apply Corrections to the MET 
   if(iVecCorr.size() > 0) { 
     correctMet(fMet        ,fMetPhi,        lCorr);
     correctMet(fMetRaw     ,fMetRawPhi,     lCorr);
     correctMet(fTKMet      ,fTKMetPhi,      lCorr);
-    correctMet(fMVAMet     ,fMVAMetPhi,     lCorr);
-    correctMet(fMVAMetUnity,fMVAMetUnityPhi,lCorr);
-    fMetSig               = metSig(fMet,fMetPhi,fMetCov00,fMetCov01,fMetCov10,fMetCov11);
-    fMVAMetSig            = metSig(fMVAMet,fMVAMetPhi,fMVAMetCov00,fMVAMetCov01,fMVAMetCov10,fMVAMetCov11);
-    fMVAMetUnitySig       = metSig(fMVAMetUnity,fMVAMetUnityPhi,fMVAMetUnityCov00,fMVAMetUnityCov01,fMVAMetUnityCov10,fMVAMetUnityCov11);
+    //fMetSig               = metSig(fMet,fMetPhi,fMetCov00,fMetCov01,fMetCov10,fMetCov11);
   }
   return;
 }

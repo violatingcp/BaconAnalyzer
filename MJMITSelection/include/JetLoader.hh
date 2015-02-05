@@ -8,8 +8,8 @@
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
 #include "CondFormats/JetMETObjects/interface/JetCorrectionUncertainty.h"
 #include "BaconAna/DataFormats/interface/TJet.hh"
-#include "BaconAna/DataFormats/interface/TAddJet.hh"
-#include "BaconAna/DataFormats/interface/TTrigger.hh"
+//#include "BaconAna/DataFormats/interface/TAddJet.hh"
+#include "BaconAna/Utils/interface/TTrigger.hh"
 
 using namespace baconhep;
 
@@ -18,36 +18,30 @@ public:
   JetLoader(TTree *iTree,bool iData=false,std::string iHLTFile="/afs/cern.ch/user/p/pharris/pharris/public/bacon/CMSSW_5_3_13/src/BaconAna/DataFormats/data/HLTFile_v0");
   ~JetLoader();
   void reset();
-  void reset(TJet &iJet,TAddJet &iAddJet);
+  void reset(TJet &iJet);
 
   void setupTree(TTree *iTree);
   void load (int iEvent);
   
   bool selectJets(std::vector<TLorentzVector> &iVetoes,double iRho);
-  void fillVars(TJet *iJet,double iRho,TLorentzVector *iPtr,TJet &iSaveJet,TAddJet &iASaveJet,TLorentzVector *iPtrsj1,TLorentzVector *iPtrsj2);
+  void fillVars(TJet *iJet,double iRho,TLorentzVector *iPtr,TJet &iSaveJet);
   //Selectors
   bool vetoJet();
   bool passLoose      (TJet *iJet);
   bool passTight      (TJet *iJet);
   bool passVeto       (TJet *iJet);
   bool passPUId       (TJet *iJet);
-  TAddJet *addJet     (TJet *iJet);
   TJet    *fatJet     (TJet *iJet);
-  float    mva        (TJet *iJet,TAddJet *iAJet);
+  float    mva        (TJet *iJet);
   //Trigger Stuff
   void addTrigger (std::string iName);
   bool passTrigObj(TJet *iJet,int iId);
-  double correction(TJet &iJet,double iRho);
 protected: 
   TClonesArray *fJets;
   TBranch      *fJetBr;
-  TClonesArray *fAddJets;
-  TBranch      *fAddJetBr;
 
   TClonesArray *fFatJets;
   TBranch      *fFatJetBr;
-  TClonesArray *fFatAddJets;
-  TBranch      *fFatAddJetBr;
   
   TTree        *fTree;
   std::vector<std::string> fTrigString;
@@ -70,10 +64,6 @@ protected:
 
   TLorentzVector *fFPtr1;
   TLorentzVector *fFPtr2;
-  TLorentzVector *fFPtr1sj1;
-  TLorentzVector *fFPtr2sj1;
-  TLorentzVector *fFPtr1sj2;
-  TLorentzVector *fFPtr2sj2;
 
   TJet fJet1;
   TJet fJet2;
@@ -82,26 +72,6 @@ protected:
   TJet fFJet1;
   TJet fFJet2;
 
-  TAddJet fAJet1;
-  TAddJet fAJet2;
-  TAddJet fAJet3;
-  TAddJet fAJet4;
-  TAddJet fFAJet1;
-  TAddJet fFAJet2;
-
   unsigned int fHLTMatch;
   unsigned int fNoiseClean;
-
-  TMVA::Reader *fReader;
-  float fQG1;
-  float fQG2;
-  float fJT1;
-  float fJT2;
-  float fJM1;
-  float fJM2;
-  float fJC2;
-  float fJQ ;
-
-  FactorizedJetCorrector   *fJetCorr;
-  JetCorrectionUncertainty *fJetUnc;
 };

@@ -1,6 +1,5 @@
 #!/bin/bash
 
-#./run.sh /store/cmst3/group/monojet/production/03/Summer12_WH_HToMuMu_M-125 1 WH ../data/json/a06.json 1 0.7046 
-#./run.sh /store/cmst3/group/monojet/production/03/Summer12_ZJetsToNuNu_100_HT_200 1 DYNN ../data/json/a06.json 0 0.7046 1
+#runMJMIT NEvents file IsGen(0=false,1=true) JSON(dataOnly) Selection(-1=>photon,0=>MET,1=>single & dimuon) XS(sample xs)
 
-runMJMIT -1 /afs/cern.ch/user/p/pharris/pharris/public/bacon/prod/CMSSW_5_3_19/src/BaconProd/Ntupler/python/BBB.root 1 ../data/json/a06.json 0 1
+runMJMIT -1 root://eoscms.cern.ch//store/user/ksung/production/phys14test/Phys14-PU20bx25_ZJetsToNuNu_HT-600toInf_Tune4C/Output_99_1_m2V.root 1 ../data/json/a06.json 0 1

@@ -1,6 +1,6 @@
 #include "BaconAna/DataFormats/interface/TEventInfo.hh"
 #include "BaconAna/DataFormats/interface/TVertex.hh"
-#include "BaconAna/DataFormats/interface/TTrigger.hh"
+#include "BaconAna/Utils/interface/TTrigger.hh"
 
 #include "TH1F.h"
 #include "TTree.h"
@@ -15,7 +15,7 @@ using namespace baconhep;
 
 class EvtLoader { 
 public:
-  EvtLoader(TTree *iTree,std::string iName,std::string iHLTFile="/afs/cern.ch/user/p/pharris/pharris/public/bacon/CMSSW_5_3_17/src/BaconAna/DataFormats/data/HLTFile_v0",std::string iPUWeight="/afs/cern.ch/user/p/pharris/pharris/public/bacon/CMSSW_5_3_13/src/BaconAnalyzer/MJMITSelection/data/PUWeights_2012.root");
+  EvtLoader(TTree *iTree,std::string iName,std::string iHLTFile="/afs/cern.ch/user/p/pharris/pharris/public/bacon/prod/CMSSW_7_2_2_patch1/src/BaconAna/DataFormats/data/HLTFile_phys14",std::string iPUWeight="/afs/cern.ch/user/p/pharris/pharris/public/bacon/CMSSW_5_3_13/src/BaconAnalyzer/MJMITSelection/data/PUWeights_2012.root");
   ~EvtLoader(); 
   void reset();
   void setupTree  (TTree *iTree,float iWeight);
