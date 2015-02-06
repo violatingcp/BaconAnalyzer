@@ -17,9 +17,10 @@ public:
   bool selectPhoton (std::vector<TLorentzVector> &iVetoes,float iRho);
   void fillVetoes(std::vector<TLorentzVector> &iVec);  
   //Vetos
-  bool vetoPhoton();
+  bool vetoPhoton(float iRho);
   //Ids
-  bool passLoose       (TPhoton *iPhoton);
+  double effArea(double eta,int iType);
+  bool passMedium      (TPhoton *iPhoton,float iRho);
   bool passCiCPhotonPre(TPhoton *p,float iRho);  
   bool passCiCPFIso    (TPhoton *p,float iRho);
 protected: 

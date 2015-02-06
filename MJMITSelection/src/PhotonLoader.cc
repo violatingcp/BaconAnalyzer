@@ -1,3 +1,4 @@
+#include <iostream>
 #include "../include/PhotonLoader.hh"
 #include "TMath.h"
 
@@ -43,7 +44,7 @@ bool PhotonLoader::selectPhotons(std::vector<TLorentzVector> &iVetoes,float iRho
       if(fabs(iVetoes[i1].Eta() - pPhoton->scEta) < 0.01) {pPass = false; break;}
     }
     if(!pPass) continue;
-    if(!passCiCPFIso(pPhoton,iRho)) continue;
+    if(!passMedium(pPhoton,iRho)) continue;
     if(lPhoton !=0 && lPhoton->pt > pPhoton->pt) continue;
     lPhoton = pPhoton;
     lCount++;
@@ -56,10 +57,12 @@ bool PhotonLoader::selectPhotons(std::vector<TLorentzVector> &iVetoes,float iRho
   return true;
 }
 bool PhotonLoader::selectPhoton(std::vector<TLorentzVector> &iVetoes,float iRho) {
-  TPhoton *lPhoton = 0; 
+  TPhoton *lPhoton = 0;
+  fNPhotons = 0;
   for  (int i0 = 0; i0 < fPhotons->GetEntriesFast(); i0++) { 
     TPhoton *pPhoton = (TPhoton*)((*fPhotons)[i0]);
-    if(!passCiCPFIso(pPhoton,iRho)) continue;
+    if(!passMedium(pPhoton,iRho)) continue;
+    fNPhotons++;
     if(lPhoton !=0 && lPhoton->pt > pPhoton->pt) continue;
     lPhoton = pPhoton;
   }
@@ -71,23 +74,60 @@ bool PhotonLoader::selectPhoton(std::vector<TLorentzVector> &iVetoes,float iRho)
   iVetoes.push_back(*fPtr1);
   return true;
 }
-bool PhotonLoader::vetoPhoton() {
+bool PhotonLoader::vetoPhoton(float iRho) {
   for  (int i0 = 0; i0 < fPhotons->GetEntriesFast(); i0++) { 
     TPhoton *pPhoton = (TPhoton*)((*fPhotons)[i0]);
-    if(passLoose(pPhoton)) return true;
+    if(passMedium(pPhoton,iRho)) return true;
   }
   return false;
 }
 //Basic POG Id except for Iso, which is just a random guess
-bool PhotonLoader::passLoose(TPhoton *photon) { 
-  if(photon->pt     < 15)   return false;
-  if(photon->hovere > 0.05) return false;
-  if(photon->sieie  > 0.01) return false;
-  double chargedIso = photon->chHadIso;
-  double neutralIso = photon->gammaIso + photon->neuHadIso;
-  double totalIso   = chargedIso+neutralIso;
-  if(totalIso/photon->pt > 0.4) return false;
+bool PhotonLoader::passMedium(TPhoton *photon,float iRho) { 
+  if(photon->pt       < 10)       return false;
+  if(!(photon->passElectronVeto)) return false;  
+  if(photon->sthovere > 0.05)     return false;
+  //if(photon->sieie  > 0.011 && fabs(photon->eta) < 1.5)  return false;
+  //if(photon->sieie  > 0.033 && fabs(photon->eta) > 1.5)  return false;
+  double chargedIso = TMath::Max(photon->chHadIso -iRho*effArea(photon->scEta,0),0.);
+  double gammaIso   = TMath::Max(photon->gammaIso -iRho*effArea(photon->scEta,1),0.);
+  double neutralIso = TMath::Max(photon->neuHadIso-iRho*effArea(photon->scEta,2),0.);
+  if(fabs(photon->eta) < 1.5 && chargedIso > 1.5)                  return false;
+  if(fabs(photon->eta) < 1.5 && gammaIso   > 0.7+0.005*photon->pt) return false;
+  if(fabs(photon->eta) < 1.5 && neutralIso > 1.0+0.04 *photon->pt) return false;
+  if(fabs(photon->eta) > 1.5 && chargedIso > 1.2)                  return false;
+  if(fabs(photon->eta) > 1.5 && gammaIso   > 1.0+0.005*photon->pt) return false;
+  if(fabs(photon->eta) > 1.5 && neutralIso > 1.5+0.04 *photon->pt) return false;
   return true;
+}
+double PhotonLoader::effArea(double eta,int iType) {
+  if(iType == 0) { 
+    if     (fabs(eta) < 1.0)   return 0.012;
+    else if(fabs(eta) < 1.479) return 0.010;
+    else if(fabs(eta) < 2.0)   return 0.014;
+    else if(fabs(eta) < 2.2)   return 0.012;
+    else if(fabs(eta) < 2.3)   return 0.016;
+    else if(fabs(eta) < 2.4)   return 0.020;
+    else                       return 0.012;
+  }
+  if(iType == 1) { 
+    if     (fabs(eta) < 1.0)   return 0.148;
+    else if(fabs(eta) < 1.479) return 0.130;
+    else if(fabs(eta) < 2.0)   return 0.112;
+    else if(fabs(eta) < 2.2)   return 0.216;
+    else if(fabs(eta) < 2.3)   return 0.262;
+    else if(fabs(eta) < 2.4)   return 0.260;
+    else                       return 0.262;
+  }
+  if(iType == 2) { 
+    if     (fabs(eta) < 1.0)   return 0.030;
+    else if(fabs(eta) < 1.479) return 0.057;
+    else if(fabs(eta) < 2.0)   return 0.039;
+    else if(fabs(eta) < 2.2)   return 0.015;
+    else if(fabs(eta) < 2.3)   return 0.024;
+    else if(fabs(eta) < 2.4)   return 0.039;
+    else                       return 0.072;
+  }
+  return 0.52;
 }
 bool PhotonLoader::passCiCPhotonPre(TPhoton *p,float iRho) { 
   bool lIsBarrel = true; 
@@ -107,8 +147,8 @@ bool PhotonLoader::passCiCPhotonPre(TPhoton *p,float iRho) {
     if(!lIsBarrel && p->hovere > 0.075) return false;
     if( lIsBarrel && p->sieie  > 0.014) return false;
     if(!lIsBarrel && p->sieie  > 0.034) return false;
-    if(p->gammaIso  - 0.012*p->pt > 50)  return false; 
-    if(p->neuHadIso - 0.005*p->pt > 50)  return false; 
+    if(p->gammaIso -0.012*p->pt > 50)  return false; 
+    if(p->neuHadIso-0.005*p->pt > 50)  return false; 
   }
   if(p->chHadIso             < 2.8) return false;  //This is not really correct, but close
   if((p->neuHadIso + p->gammaIso)-0.17*iRho < 3  ) return false;
