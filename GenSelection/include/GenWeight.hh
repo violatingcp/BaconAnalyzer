@@ -30,5 +30,6 @@ public:
 private:
   TBranch      *fGenWeightBr;
   TClonesArray *fGenWeight;
+  bool          fNoWeight;
 };
 #endif

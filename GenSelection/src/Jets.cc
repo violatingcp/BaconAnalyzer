@@ -32,7 +32,9 @@ void Jets::setupJetTree(TTree *iTree) {
   iTree->Branch("fjeta"    ,&fGFJEta,    "fGFJEta/F");
   iTree->Branch("fjphi"    ,&fGFJPhi,    "fGFJPhi/F");
   iTree->Branch("fjm"      ,&fGFJM,      "fGFJM/F");
-  iTree->Branch("fjmtrim"  ,&fGFJMTrim,  "fGFJMTrim/F");
+  iTree->Branch("fjmsd"    ,&fGFJMSD,    "fGFJMSD/F");
+  iTree->Branch("fjt2t1"   ,&fGFJT2T1,   "fGFJT2T1/F");
+  iTree->Branch("fjt3t2"   ,&fGFJT3T2,   "fGFJT3T2/F");
 
   iTree->Branch("mjj"      ,&fMJJ,      "fMJJ/F");
   iTree->Branch("ptjj"     ,&fPtJJ,     "fPtJJ/F");
@@ -42,6 +44,7 @@ void Jets::setupJetTree(TTree *iTree) {
   iTree->Branch("jdphi"    ,&fJDPhi,    "fJDPhi/F");
   iTree->Branch("njets"    ,&fNJets,    "fNJets/F");
   iTree->Branch("njets50"  ,&fNJets50,  "fNJets50/F");
+  iTree->Branch("ht"       ,&fHT,       "fHT/F");
 }
 void Jets::clearJets(int i0){
   fGenJets   ->Clear(); fGenJetBr   ->GetEntry(i0);  
@@ -66,8 +69,10 @@ void Jets::clearJets(int i0){
   fGFJEta=0;
   fGFJPhi=0;
   fGFJM=0;
-  fGFJMTrim=0;
-   
+  fGFJMSD=0;
+  fGFJT2T1=0;
+  fGFJT3T2=0;
+
   fMJJ=0;
   fPtJJ=0;
   fPhiJJ=0;
@@ -76,6 +81,7 @@ void Jets::clearJets(int i0){
   fJDPhi=0;
   fNJets=0;
   fNJets50=0;
+  fHT=0;
 }
 void Jets::insert(baconhep::TGenJet *iJet,std::vector<baconhep::TGenJet*> &lJets) { 
   for(std::vector<baconhep::TGenJet*>::iterator pIter = lJets.begin(); pIter != lJets.end(); pIter++) { 
@@ -88,7 +94,7 @@ void Jets::insert(baconhep::TGenJet *iJet,std::vector<baconhep::TGenJet*> &lJets
 }
 
 void Jets::selectJets(std::vector<TLorentzVector> &iVec) { 
-  std::vector<baconhep::TGenJet*> lJets;
+  fJets.clear();
   for(int i0 = 0; i0 < fGenJets->GetEntriesFast(); i0++) {
     baconhep::TGenJet *pJet = (baconhep::TGenJet*) fGenJets->At(i0);
     bool pMatch = false;
@@ -96,26 +102,27 @@ void Jets::selectJets(std::vector<TLorentzVector> &iVec) {
       if(Tools::deltaR(iVec[i1].Eta(),iVec[i1].Phi(),pJet->eta,pJet->phi) < 0.5) pMatch = true;
     }
     if(pMatch) continue;
+    if(pJet->pt > 30) fHT += pJet->pt;
     if(pJet->pt > 30) fNJets++;
     if(pJet->pt > 50) fNJets50++;
     if(pJet->pt < 15) continue;
-    insert(pJet,lJets);
+    insert(pJet,fJets);
   }
-  if(lJets.size() >  0) fGJetPt1  = lJets[0]->pt;
-  if(lJets.size() >  0) fGJetEta1 = lJets[0]->eta;
-  if(lJets.size() >  0) fGJetPhi1 = lJets[0]->phi;
-  if(lJets.size() >  0) fGJetM1   = lJets[0]->mass;
-  if(lJets.size() >  0) fGJetId1  = lJets[0]->pdgId;
-  if(lJets.size() >  1) fGJetPt2  = lJets[1]->pt;
-  if(lJets.size() >  1) fGJetEta2 = lJets[1]->eta;
-  if(lJets.size() >  1) fGJetPhi2 = lJets[1]->phi;
-  if(lJets.size() >  1) fGJetM2   = lJets[1]->mass;
-  if(lJets.size() >  1) fGJetId2  = lJets[1]->pdgId;
-  if(lJets.size() >  2) fGJCPt    = lJets[2]->pt;
-  if(lJets.size() >  2) fGJCEta   = lJets[2]->eta;;
-  if(lJets.size() >  2) fGJCPhi   = lJets[2]->phi;
-  if(lJets.size() >  2) fGJCM     = lJets[2]->mass;
-  if(lJets.size() >  2) fGJCId    = lJets[2]->pdgId;
+  if(fJets.size() >  0) fGJetPt1  = fJets[0]->pt;
+  if(fJets.size() >  0) fGJetEta1 = fJets[0]->eta;
+  if(fJets.size() >  0) fGJetPhi1 = fJets[0]->phi;
+  if(fJets.size() >  0) fGJetM1   = fJets[0]->mass;
+  if(fJets.size() >  0) fGJetId1  = fJets[0]->pdgId;
+  if(fJets.size() >  1) fGJetPt2  = fJets[1]->pt;
+  if(fJets.size() >  1) fGJetEta2 = fJets[1]->eta;
+  if(fJets.size() >  1) fGJetPhi2 = fJets[1]->phi;
+  if(fJets.size() >  1) fGJetM2   = fJets[1]->mass;
+  if(fJets.size() >  1) fGJetId2  = fJets[1]->pdgId;
+  if(fJets.size() >  2) fGJCPt    = fJets[2]->pt;
+  if(fJets.size() >  2) fGJCEta   = fJets[2]->eta;;
+  if(fJets.size() >  2) fGJCPhi   = fJets[2]->phi;
+  if(fJets.size() >  2) fGJCM     = fJets[2]->mass;
+  if(fJets.size() >  2) fGJCId    = fJets[2]->pdgId;
 
   std::vector<baconhep::TGenJet*> lVJets;
   for(int i0 = 0; i0 < fGenFatJets->GetEntriesFast(); i0++) {
@@ -132,7 +139,9 @@ void Jets::selectJets(std::vector<TLorentzVector> &iVec) {
   if(lVJets.size() >  0) fGFJEta   = lVJets[0]->eta;
   if(lVJets.size() >  0) fGFJPhi   = lVJets[0]->phi;
   if(lVJets.size() >  0) fGFJM     = lVJets[0]->mass;
-  if(lVJets.size() >  0) fGFJMTrim = lVJets[0]->mtrim;
+  if(lVJets.size() >  0) fGFJMSD   = float(lVJets[0]->msd);
+  if(lVJets.size() >  0) fGFJT2T1  = float(lVJets[0]->tau2/lVJets[0]->tau1);
+  if(lVJets.size() >  0) fGFJT3T2  = float(lVJets[0]->tau3/lVJets[0]->tau2);
   /*
   baconhep::TGenJet *lCentral = 0;
   for(int i0 = 2; i0 < int(lJets.size()); i0++) {

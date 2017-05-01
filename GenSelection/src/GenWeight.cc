@@ -5,13 +5,15 @@
 
 GenWeight::GenWeight(TTree *iTree,TTree *iOTree) { 
   loadGen(iTree);
-  setupGenTree(iOTree);
+  if(!fNoWeight) setupGenTree(iOTree);
 }
 GenWeight::~GenWeight() { }
 void GenWeight::loadGen(TTree *iTree) { 
   baconhep::TLHEWeight   ::Class() ->IgnoreTObjectStreamer();
   fGenWeight        = new TClonesArray("baconhep::TLHEWeight");
   iTree->SetBranchAddress("LHEWeight"    ,&fGenWeight);   fGenWeightBr   = iTree->GetBranch("LHEWeight"  ); 
+  fNoWeight = false;
+  if(fGenWeightBr == 0) fNoWeight = true;
 }
 void GenWeight::setupGenTree(TTree *iTree) {
   iTree->Branch("scale12",&fScale12,"fScale12/F");
@@ -27,6 +29,7 @@ void GenWeight::setupGenTree(TTree *iTree) {
   iTree->Branch("pdfDown",&fPDFDown,"fPDFDown/F");
 }
 void GenWeight::clearGen(int i0) {
+  if(fNoWeight) return;
   fGenWeightBr->GetEntry(i0);
   fScale10 = 1.;
   fScale12 = 1.;
@@ -41,6 +44,7 @@ void GenWeight::clearGen(int i0) {
   for(int i0 = 0; i0 < 100; i0++) fPDF[i0] = 0.;
 }
 void GenWeight::fill() { 
+  if(fNoWeight) return;
   double lBaseWeight = 1.;
   int lNUp   = 0; 
   int lNDown = 0; 
